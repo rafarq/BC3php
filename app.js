@@ -132,31 +132,39 @@ function updateGridTemplate() {
 function renderApp(data) {
     parsedData = data;
 
-    // Render Project Info
+    // Render Project Info (only if elements exist - for standalone viewer)
     const info = document.getElementById('projectInfo');
-    const title = document.getElementById('projectTitle');
-    const owner = document.getElementById('projectOwner');
+    if (info) {
+        const title = document.getElementById('projectTitle');
+        const owner = document.getElementById('projectOwner');
+        const stats = document.getElementById('stats');
 
-    // Try to find a good title. Usually from ~V properties or root node.
-    // Improve title display by removing trailing # if present
-    const rawTitle = data.properties.description || (data.properties.owner + ' Project');
-    title.textContent = rawTitle.replace(/#+\s*$/, '');
+        if (title) {
+            // Try to find a good title. Usually from ~V properties or root node.
+            // Improve title display by removing trailing # if present
+            const rawTitle = data.properties.description || (data.properties.owner + ' Project');
+            title.textContent = rawTitle.replace(/#+\s*$/, '');
+        }
 
-    // Display metadata
-    const metaText = [
-        data.properties.owner ? `Propietario: ${data.properties.owner}` : '',
-        data.properties.format ? `Formato: ${data.properties.format}` : '',
-        data.properties.charset ? `(${data.properties.charset})` : ''
-    ].filter(Boolean).join(' | ');
+        if (owner) {
+            // Display metadata
+            const metaText = [
+                data.properties.owner ? `Propietario: ${data.properties.owner}` : '',
+                data.properties.format ? `Formato: ${data.properties.format}` : '',
+                data.properties.charset ? `(${data.properties.charset})` : ''
+            ].filter(Boolean).join(' | ');
+            owner.textContent = metaText;
+        }
 
-    owner.textContent = metaText;
+        if (stats) {
+            // Show debug stats
+            const conceptCount = Object.keys(data.concepts).length;
+            const rootCount = data.root_nodes.length;
+            stats.textContent = `Cargado: ${conceptCount} partidas | Raíces: ${rootCount}`;
+        }
 
-    // Show debug stats
-    const conceptCount = Object.keys(data.concepts).length;
-    const rootCount = data.root_nodes.length;
-    document.getElementById('stats').textContent = `Cargado: ${conceptCount} partidas | Raíces: ${rootCount}`;
-
-    info.style.display = 'block';
+        info.style.display = 'block';
+    }
 
     // Render Tree
     const treeContainer = document.getElementById('treeContent');
@@ -195,9 +203,9 @@ function renderApp(data) {
         treeContainer.appendChild(rootList);
 
         // Re-apply filter if exists (e.g. re-processing same file or new file with text in search)
-        const searchTerm = document.getElementById('searchTerm').value.trim();
-        if (searchTerm) {
-            filterTree(searchTerm);
+        const searchInput = document.getElementById('searchTerm');
+        if (searchInput && searchInput.value.trim()) {
+            filterTree(searchInput.value.trim());
         }
 
     } catch (e) {
