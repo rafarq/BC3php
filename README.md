@@ -70,6 +70,69 @@ El parser soporta los siguientes registros del estándar FIEBDC-3:
 - `~T` - Textos descriptivos
 - `~M` - Mediciones detalladas
 
+## Integración en Otro Proyecto
+
+Para integrar este visor BC3 en un proyecto existente:
+
+### Archivos Requeridos
+
+Copia estos archivos a tu proyecto:
+
+```
+tu-proyecto/
+├── BC3Parser.php      # Parser PHP (backend)
+├── upload.php         # Endpoint de subida
+├── app.js             # Lógica del visor
+└── style.css          # Estilos (adaptar según necesidad)
+```
+
+### HTML Mínimo Requerido
+
+Añade estos elementos a tu página:
+
+```html
+<!-- En el HEAD -->
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- En el BODY -->
+<div class="app-container">
+    <header class="main-header">
+        <form id="uploadForm">
+            <label for="bc3file" class="upload-btn">
+                <span id="fileName">Seleccionar archivo .bc3</span>
+                <input type="file" id="bc3file" name="bc3file" accept=".bc3" hidden>
+            </label>
+            <button type="submit" class="process-btn">Procesar</button>
+        </form>
+        <div class="project-info" id="projectInfo" style="display:none;">
+            <h1 id="projectTitle"></h1>
+            <div id="stats"></div>
+        </div>
+    </header>
+
+    <main class="content-area">
+        <div class="tree-panel" id="treePanel">
+            <div class="empty-state">Sube un fichero para ver el árbol</div>
+            <div id="treeContent"></div>
+        </div>
+    </main>
+</div>
+
+<script src="app.js"></script>
+```
+
+### Personalización
+
+- **Estilos**: Modifica las variables CSS en `:root` de `style.css` para adaptar colores
+- **Columnas**: Ajusta `grid-template-columns` en `.tree-header` y `.tree-node-row`
+- **Endpoint**: Si cambias la ruta de `upload.php`, actualiza el fetch en `app.js`
+
+### Dependencias
+
+- PHP 7.4+ con extensión `mbstring`
+- Ninguna dependencia JavaScript externa
+
 ## Licencia
 
 MIT
