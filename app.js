@@ -17,6 +17,17 @@ if (searchInput) {
     });
 }
 
+// Window resize handler - re-render when switching between mobile/desktop
+let resizeTimeout;
+window.addEventListener('resize', function () {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (parsedData) {
+            renderCurrentLevel();
+        }
+    }, 250);
+});
+
 // 3. Upload Form Submit
 const uploadForm = document.getElementById('uploadForm');
 if (uploadForm) {
@@ -63,13 +74,161 @@ if (uploadForm) {
 
 let parsedData = null;
 
-// Column resize state
-let resizeState = {
-    isResizing: false,
-    colIdx: null,
-    startX: 0,
-    startWidth: 0
-};
+// Drill-down navigation state
+let navigationStack = []; // Stack of { code, title } objects
+let currentLevel = null; // null = root level, or code of current parent
+
+// Check if we're in mobile mode
+function isMobileMode() {
+    return window.innerWidth <= 768;
+}
+
+// Update breadcrumb display
+function updateBreadcrumbs() {
+    const container = document.getElementById('breadcrumbContainer');
+    const path = document.getElementById('breadcrumbPath');
+    const backBtn = document.getElementById('breadcrumbBack');
+
+    if (!isMobileMode() || navigationStack.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'flex';
+    path.innerHTML = '';
+
+    // Add root
+    const rootItem = document.createElement('span');
+    rootItem.className = 'breadcrumb-item';
+    rootItem.textContent = 'Inicio';
+    rootItem.onclick = () => navigateToLevel(null);
+    path.appendChild(rootItem);
+
+    // Add navigation stack items
+    navigationStack.forEach((item, index) => {
+        const separator = document.createElement('span');
+        separator.className = 'breadcrumb-separator';
+        separator.textContent = '›';
+        path.appendChild(separator);
+
+        const breadcrumbItem = document.createElement('span');
+        breadcrumbItem.className = index === navigationStack.length - 1 ? 'breadcrumb-current' : 'breadcrumb-item';
+        breadcrumbItem.textContent = item.title;
+
+        if (index < navigationStack.length - 1) {
+            breadcrumbItem.onclick = () => navigateToLevel(item.code);
+        }
+
+        path.appendChild(breadcrumbItem);
+    });
+
+    // Back button handler
+    backBtn.onclick = () => {
+        if (navigationStack.length > 0) {
+            navigationStack.pop();
+            const newLevel = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1].code : null;
+            navigateToLevel(newLevel, false); // false = don't push to stack
+        }
+    };
+}
+
+// Navigate to a specific level
+function navigateToLevel(parentCode, pushToStack = true) {
+    currentLevel = parentCode;
+
+    // Update stack
+    if (pushToStack) {
+        if (parentCode === null) {
+            navigationStack = [];
+        } else {
+            // Find index of this code in stack
+            const index = navigationStack.findIndex(item => item.code === parentCode);
+            if (index >= 0) {
+                // Going back to an existing level
+                navigationStack = navigationStack.slice(0, index + 1);
+            }
+        }
+    }
+
+    updateBreadcrumbs();
+    renderCurrentLevel();
+}
+
+// Render the current level based on navigation state
+function renderCurrentLevel() {
+    if (!parsedData) return;
+
+    const treeContainer = document.getElementById('treeContent');
+    treeContainer.innerHTML = '';
+
+    // Add mobile class if in mobile mode
+    if (isMobileMode()) {
+        treeContainer.classList.add('mobile-drilldown');
+    } else {
+        treeContainer.classList.remove('mobile-drilldown');
+    }
+
+    // Create Header
+    const header = document.createElement('div');
+    header.className = 'tree-header';
+    header.innerHTML = `
+        <div>Código</div>
+        <div>Ud</div>
+        <div>Resumen</div>
+        <div>Cantidad</div>
+        <div>Precio</div>
+        <div>Importe</div>
+    `;
+    treeContainer.appendChild(header);
+
+    const rootList = document.createElement('div');
+    rootList.className = 'tree-roots';
+
+    if (isMobileMode()) {
+        // Mobile: Show only current level
+        if (currentLevel === null) {
+            // Show root nodes
+            const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+            roots.forEach(code => {
+                const rootNode = createNode(code, true, 0, 1, true); // true = mobile mode
+                rootList.appendChild(rootNode);
+            });
+        } else {
+            // Show children of current level
+            const concept = parsedData.concepts[currentLevel];
+            if (concept) {
+                let decomposition = [];
+                if (Array.isArray(concept.decomposition) && concept.decomposition.length > 0) {
+                    decomposition = concept.decomposition;
+                } else if (Array.isArray(concept.children) && concept.children.length > 0) {
+                    decomposition = concept.children.map(c => ({ code: c, factor: 1 }));
+                }
+
+                decomposition.forEach(item => {
+                    const childNode = createNode(item.code, false, 0, item.factor, true); // true = mobile mode
+                    rootList.appendChild(childNode);
+                });
+            }
+        }
+    } else {
+        // Desktop: Show full tree
+        const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+        roots.forEach(code => {
+            const rootNode = createNode(code, true, 0, 1, false); // false = desktop mode
+            rootList.appendChild(rootNode);
+        });
+    }
+
+    treeContainer.appendChild(rootList);
+
+    // Re-apply filter if exists
+    const searchTerm = document.getElementById('searchTerm').value.trim();
+    if (searchTerm) {
+        filterTree(searchTerm);
+    }
+}
+
+
 
 // Initialize resize on mousedown
 function initResize(e) {
@@ -132,6 +291,10 @@ function updateGridTemplate() {
 function renderApp(data) {
     parsedData = data;
 
+    // Reset navigation state
+    navigationStack = [];
+    currentLevel = null;
+
     // Render Project Info (only if elements exist - for standalone viewer)
     const info = document.getElementById('projectInfo');
     if (info) {
@@ -166,53 +329,20 @@ function renderApp(data) {
         info.style.display = 'block';
     }
 
-    // Render Tree
-    const treeContainer = document.getElementById('treeContent');
-    treeContainer.innerHTML = '';
-
     // Hide empty state
     const emptyState = document.querySelector('#treePanel .empty-state');
     if (emptyState) emptyState.style.display = 'none';
 
     try {
-        // Create Header (simple, relies on CSS grid-template-columns)
-        const header = document.createElement('div');
-        header.className = 'tree-header';
-        header.innerHTML = `
-            <div>Código</div>
-            <div>Ud</div>
-            <div>Resumen</div>
-            <div>Cantidad</div>
-            <div>Precio</div>
-            <div>Importe</div>
-        `;
-        treeContainer.appendChild(header);
-
-        const rootList = document.createElement('div');
-        rootList.className = 'tree-roots';
-
-        // Ensure root_nodes is an array
-        const roots = Array.isArray(data.root_nodes) ? data.root_nodes : Object.values(data.root_nodes);
-
-        roots.forEach(code => {
-            // Root nodes imply qty 1 unless we had a project root with factors (bc3 usually starts with concepts)
-            const rootNode = createNode(code, true, 0, 1);
-            rootList.appendChild(rootNode);
-        });
-
-        treeContainer.appendChild(rootList);
-
-        // Re-apply filter if exists (e.g. re-processing same file or new file with text in search)
-        const searchInput = document.getElementById('searchTerm');
-        if (searchInput && searchInput.value.trim()) {
-            filterTree(searchInput.value.trim());
-        }
+        // Render using new navigation system
+        renderCurrentLevel();
 
     } catch (e) {
         console.error(e);
         document.getElementById('stats').textContent += ' | ERROR RENDER: ' + e.message;
     }
 }
+
 
 /**
  * Filter the tree view based on search text
@@ -331,8 +461,9 @@ function filterTree(text) {
  * @param {boolean} isRoot 
  * @param {number} depth 
  * @param {number} qty - Quantity of this node in the parent context (factor)
+ * @param {boolean} mobileMode - Whether to render in mobile drill-down mode
  */
-function createNode(code, isRoot = false, depth = 0, qty = 1) {
+function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false) {
     const concept = parsedData.concepts[code];
     if (!concept) {
         console.warn('Missing concept:', code);
@@ -462,12 +593,36 @@ function createNode(code, isRoot = false, depth = 0, qty = 1) {
     row.appendChild(colPrice);
     row.appendChild(colAmount);
 
+    // Add mobile navigation indicator
+    if (mobileMode && hasChildren) {
+        row.classList.add('has-children-mobile');
+    }
+
     // Click handlers
     row.onclick = (e) => {
         // Prevent triggering if we clicked a link or input (just in case)
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
 
-        // Select
+        // Mobile mode behavior
+        if (mobileMode) {
+            // Check if this item has decomposition children (not just measurements/description)
+            const hasDecompositionChildren = decomposition && decomposition.length > 0;
+
+            if (hasDecompositionChildren) {
+                // Navigate to next level for items with children
+                navigationStack.push({
+                    code: code,
+                    title: concept.summary || concept.code.replace(/#+\s*$/, '')
+                });
+                navigateToLevel(code);
+            } else {
+                // Show inline details for leaf items (partidas)
+                showMobileDetails(code, container);
+            }
+            return;
+        }
+
+        // Desktop mode: Select and toggle expand/collapse
         document.querySelectorAll('.tree-node-row').forEach(el => el.classList.remove('active'));
         row.classList.add('active');
         showDetails(code);
@@ -488,6 +643,8 @@ function createNode(code, isRoot = false, depth = 0, qty = 1) {
             }
         }
     };
+
+
 
     container.appendChild(row);
 
@@ -524,9 +681,13 @@ function createNode(code, isRoot = false, depth = 0, qty = 1) {
 
         // 2. Render Decomposition/Children (Sub-items)
         // Usually items with measurements don't have further sub-items, but chapters do.
-        decomposition.forEach(item => {
-            childrenContainer.appendChild(createNode(item.code, false, depth + 1, item.factor));
-        });
+        // Only render children in desktop mode (in mobile, we navigate to them)
+        if (!mobileMode) {
+            decomposition.forEach(item => {
+                childrenContainer.appendChild(createNode(item.code, false, depth + 1, item.factor, mobileMode));
+            });
+        }
+
 
         container.appendChild(childrenContainer);
     }
@@ -610,7 +771,75 @@ function createMeasurementTable(measurements) {
     return container;
 }
 
+/**
+ * Show details inline for mobile view
+ * @param {string} code - The code of the concept to show
+ * @param {HTMLElement} container - The container element for this node
+ */
+function showMobileDetails(code, container) {
+    const concept = parsedData.concepts[code];
+    if (!concept) return;
+
+    // Check if details are already shown
+    let detailsContainer = container.querySelector('.mobile-details-container');
+
+    if (detailsContainer) {
+        // Toggle visibility
+        if (detailsContainer.style.display === 'none') {
+            detailsContainer.style.display = 'block';
+        } else {
+            detailsContainer.style.display = 'none';
+        }
+        return;
+    }
+
+    // Create details container
+    detailsContainer = document.createElement('div');
+    detailsContainer.className = 'mobile-details-container';
+    detailsContainer.style.padding = '1rem';
+    detailsContainer.style.backgroundColor = '#f8fafc';
+    detailsContainer.style.borderBottom = '1px solid var(--border-color)';
+
+    // Title
+    const title = document.createElement('h3');
+    title.style.margin = '0 0 0.5rem 0';
+    title.style.fontSize = '1rem';
+    title.style.fontWeight = '600';
+    title.style.color = 'var(--text-primary)';
+    title.textContent = concept.summary || concept.code.replace(/#+\s*$/, '');
+    detailsContainer.appendChild(title);
+
+    // Description
+    if (concept.description && concept.description.trim()) {
+        const description = document.createElement('div');
+        description.style.marginBottom = '1rem';
+        description.style.fontSize = '0.9rem';
+        description.style.color = 'var(--text-secondary)';
+        description.style.whiteSpace = 'pre-wrap';
+        description.textContent = concept.description;
+        detailsContainer.appendChild(description);
+    }
+
+    // Measurements table
+    if (concept.measurements && concept.measurements.length > 0) {
+        const tableTitle = document.createElement('h4');
+        tableTitle.style.margin = '1rem 0 0.5rem 0';
+        tableTitle.style.fontSize = '0.9rem';
+        tableTitle.style.fontWeight = '600';
+        tableTitle.style.color = 'var(--text-primary)';
+        tableTitle.textContent = 'Líneas de Medición';
+        detailsContainer.appendChild(tableTitle);
+
+        const msTable = createMeasurementTable(concept.measurements);
+        detailsContainer.appendChild(msTable);
+    }
+
+    // Insert after the row
+    container.appendChild(detailsContainer);
+}
+
 function showDetails(code) {
+
     const concept = parsedData.concepts[code];
     const panel = document.getElementById('detailsContent');
     const emptyState = document.querySelector('#detailsPanel .empty-state');

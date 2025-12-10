@@ -360,3 +360,202 @@ body {
 .toggle-icon.expanded {
     transform: rotate(90deg);
 }
+
+/* Breadcrumb Navigation */
+.breadcrumb-container {
+    padding: 0.75rem 1rem;
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.breadcrumb-back {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.breadcrumb-back:hover {
+    background-color: var(--accent-hover);
+}
+
+.breadcrumb-path {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    overflow-x: auto;
+}
+
+.breadcrumb-item {
+    cursor: pointer;
+    color: var(--accent);
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.breadcrumb-item:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    color: var(--text-secondary);
+}
+
+.breadcrumb-current {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Mobile Drill-Down Styles */
+.tree-node-row.has-children-mobile {
+    position: relative;
+    /* Navigation arrow removed for cleaner mobile interface */
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+
+    /* Header adjustments */
+    .main-header {
+        flex-direction: column;
+        height: auto;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .logo {
+        font-size: 1rem;
+    }
+
+    .upload-area form {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .upload-btn {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .process-btn {
+        width: 100%;
+    }
+
+    .project-info {
+        text-align: left;
+        width: 100%;
+    }
+
+    .project-info h1 {
+        font-size: 0.85rem;
+    }
+
+    .project-info .meta {
+        font-size: 0.7rem;
+    }
+
+    /* Hide less important columns on mobile */
+    .tree-header {
+        grid-template-columns: 1fr 90px 120px;
+    }
+
+    .tree-node-row {
+        grid-template-columns: 1fr 90px 120px;
+    }
+
+    /* Hide Unit and Quantity columns */
+    .tree-header div:nth-child(2),
+    .tree-header div:nth-child(4),
+    .col-unit,
+    .col-quantity {
+        display: none;
+    }
+
+    /* Adjust remaining columns */
+    .tree-header div:nth-child(1),
+    .col-code {
+        grid-column: 1;
+    }
+
+    .tree-header div:nth-child(3),
+    .col-summary {
+        display: none;
+        /* Hide summary on very small screens */
+    }
+
+    .tree-header div:nth-child(5),
+    .col-price {
+        grid-column: 2;
+        text-align: right;
+    }
+
+    .tree-header div:nth-child(6),
+    .col-amount {
+        grid-column: 3;
+        text-align: right;
+    }
+
+    /* Adjust code column padding for mobile */
+    .col-code {
+        padding-left: 8px !important;
+    }
+
+    /* Hide toggle icon in drill-down mode */
+    .mobile-drilldown .toggle-icon {
+        display: none;
+    }
+
+    /* Breadcrumb adjustments */
+    .breadcrumb-container {
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .breadcrumb-back {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .breadcrumb-path {
+        font-size: 0.75rem;
+    }
+
+    /* Search bar */
+    .search-bar-container {
+        padding: 0.5rem;
+    }
+
+    .search-bar-container input {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+
+    /* Measurements table - make scrollable */
+    .measurements-container {
+        padding: 10px;
+        overflow-x: auto;
+    }
+
+    .measurements-table {
+        font-size: 0.75rem;
+        min-width: 500px;
+    }
+
+    .measurements-table th,
+    .measurements-table td {
+        padding: 4px 8px;
+    }
+}
