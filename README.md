@@ -52,13 +52,13 @@ php -S localhost:8080
 
 ## Estructura de Archivos
 
-| Archivo | Descripción |
-|---------|-------------|
-| `index.html` | Página HTML principal |
-| `style.css` | Estilos CSS (tema claro) |
-| `app.js` | Lógica JavaScript del frontend |
-| `BC3Parser.php` | Parser PHP para archivos BC3 |
-| `upload.php` | Endpoint para subir archivos |
+| Archivo           | Descripción                    |
+| ----------------- | ------------------------------- |
+| `index.html`    | Página HTML principal          |
+| `style.css`     | Estilos CSS (tema claro)        |
+| `app.js`        | Lógica JavaScript del frontend |
+| `BC3Parser.php` | Parser PHP para archivos BC3    |
+| `upload.php`    | Endpoint para subir archivos    |
 
 ## Formato BC3
 
@@ -135,7 +135,7 @@ Añade estos elementos a tu página:
 
 ## Creado por
 
-SmartCalc es una herramienta creada por System Arquitectura, empresa con sede en Málaga especializada en proyectos de arquitectura industrial, logística, corporativa y residencial.
+BC3php es una herramienta creada por System Arquitectura, empresa con sede en Málaga especializada en proyectos de arquitectura industrial, logística, corporativa y residencial.
 
 Su enfoque combina diseño, tecnología y sostenibilidad desde las fases tempranas del proyecto, con una visión técnica y estratégica orientada a mejorar el rendimiento de las organizaciones y su relación con el entorno.
 
