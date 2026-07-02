@@ -21,6 +21,7 @@ header("Pragma: no-cache");
             <div class="upload-area">
                 <form id="uploadForm">
                     <button type="button" id="dashboardBtn" class="dashboard-btn" style="display:none;">Dashboard</button>
+                    <button type="button" id="planningBtn" class="planning-btn" style="display:none;">🗓 Planning</button>
                     <label for="bc3file" class="upload-btn">
                         <span id="fileName">Seleccionar archivo .bc3</span>
                         <input type="file" id="bc3file" name="bc3file" accept=".bc3" hidden>
@@ -224,6 +225,28 @@ header("Pragma: no-cache");
                     <button type="button" id="clearCompareBtn" class="clear-compare-btn">Quitar Comparación</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Planning / Gantt -->
+    <div id="planningModal" class="planning-modal-overlay" style="display:none;">
+        <div class="planning-modal-content">
+            <div class="planning-modal-header">
+                <div class="planning-modal-title">🗓 Planning — Diagrama de Gantt</div>
+                <div class="planning-controls">
+                    <label>Inicio:
+                        <input type="date" id="ganttStartDate" class="gantt-control-input">
+                    </label>
+                    <label>Semanas:
+                        <input type="number" id="ganttWeeks" class="gantt-control-input" value="26" min="4" max="156" style="width:60px;">
+                    </label>
+                    <button type="button" id="ganttResetBtn" class="gantt-action-btn">↺ Reiniciar</button>
+                    <button type="button" id="exportGanttExcelBtn" class="gantt-action-btn gantt-excel-btn">⬇ Excel</button>
+                    <button type="button" id="exportGanttPdfBtn" class="gantt-action-btn gantt-pdf-btn">⬇ PDF</button>
+                    <button type="button" id="closePlanningBtn" class="gantt-close-btn">✕ Cerrar</button>
+                </div>
+            </div>
+            <div id="ganttContainer" class="gantt-container"></div>
         </div>
     </div>
 

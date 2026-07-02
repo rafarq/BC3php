@@ -339,6 +339,8 @@ function renderApp(data) {
     if (exportDrop) exportDrop.style.display = 'inline-block';
     if (cBtn) cBtn.style.display = 'inline-block';
     if (dBtn) dBtn.style.display = 'inline-block';
+    const pBtn = document.getElementById('planningBtn');
+    if (pBtn) pBtn.style.display = 'inline-block';
 
     // Resetear comparador y coeficientes al cargar un nuevo presupuesto
     compareData = null;
@@ -2482,7 +2484,678 @@ const redoBtn = document.getElementById('redoBtn');
 if (undoBtn) {
     undoBtn.addEventListener('click', undo);
 }
-if (redoBtn) {
-    redoBtn.addEventListener('click', redo);
+
+// ============================================================
+// MÓDULO PLANNING — DIAGRAMA DE GANTT INTERACTIVO
+// ============================================================
+
+// Estado Gantt: { taskId: { startWeek, durationWeeks, collapsed } }
+let ganttState = {};
+let ganttTasks = [];
+let ganttStartDate = new Date();
+let ganttTotalWeeks = 26;
+const GANTT_WEEK_PX = 44; // ancho de cada semana en px
+let ganttLeftColWidth = 280;  // ancho columna tareas en px (redimensionable)
+let ganttColDrag = null;       // estado drag de la columna
+
+// Clave localStorage basada en el nombre del fichero cargado
+function ganttStorageKey() {
+    return 'gantt_' + currentFileName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\.]/g, '');
 }
 
+// Guardar estado en localStorage
+function ganttSave() {
+    try {
+        localStorage.setItem(ganttStorageKey(), JSON.stringify({
+            startDate: ganttStartDate.toISOString(),
+            totalWeeks: ganttTotalWeeks,
+            state: ganttState
+        }));
+    } catch (e) { /* cuota excedida — ignorar */ }
+}
+
+// Cargar estado desde localStorage
+function ganttLoad() {
+    try {
+        const raw = localStorage.getItem(ganttStorageKey());
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        if (saved.startDate) ganttStartDate = new Date(saved.startDate);
+        if (saved.totalWeeks) ganttTotalWeeks = saved.totalWeeks;
+        if (saved.state) ganttState = saved.state;
+        return true;
+    } catch (e) { return false; }
+}
+
+// Extraer tareas hasta nivel 3 desde parsedData
+function getGanttTasks() {
+    const tasks = [];
+    if (!parsedData) return tasks;
+    const roots = Array.isArray(parsedData.root_nodes)
+        ? parsedData.root_nodes
+        : Object.values(parsedData.root_nodes);
+
+    function addTask(code, depth, parentId) {
+        if (depth > 3) return;
+        const concept = parsedData.concepts[code];
+        if (!concept) return;
+        const id = code;
+        const price = parseFloat(concept.price) || 0;
+        const children = getConceptDecomposition(concept);
+        const hasKids = children.length > 0 && depth < 3;
+
+        tasks.push({
+            id,
+            code: concept.code.replace(/#+\s*$/, ''),
+            summary: concept.summary || concept.code,
+            depth,
+            parentId,
+            price,
+            hasKids
+        });
+
+        if (hasKids) {
+            children.forEach(child => addTask(child.code, depth + 1, id));
+        }
+    }
+
+    roots.forEach(code => addTask(code, 1, null));
+    return tasks;
+}
+
+// Distribución inicial automática (proporcional al coste)
+function initGanttStateAuto(tasks, totalWeeks) {
+    const total = tasks.filter(t => t.depth === 1).reduce((s, t) => s + t.price, 0) || 1;
+    let cursor = 1;
+
+    tasks.forEach(task => {
+        if (ganttState[task.id]) return; // ya guardado
+        if (task.depth === 1) {
+            const proportion = task.price / total;
+            const dur = Math.max(1, Math.round(proportion * totalWeeks));
+            ganttState[task.id] = { startWeek: cursor, durationWeeks: dur, collapsed: false };
+            cursor += dur;
+        }
+    });
+
+    // Subcapítulos: distribuidos dentro del padre
+    tasks.forEach(task => {
+        if (ganttState[task.id]) return;
+        if (task.depth > 1 && task.parentId && ganttState[task.parentId]) {
+            const parent = ganttState[task.parentId];
+            const siblings = tasks.filter(t => t.parentId === task.parentId);
+            const idx = siblings.indexOf(task);
+            const dur = Math.max(1, Math.round(parent.durationWeeks / siblings.length));
+            const start = parent.startWeek + idx * dur;
+            ganttState[task.id] = {
+                startWeek: Math.min(start, parent.startWeek + parent.durationWeeks - 1),
+                durationWeeks: dur,
+                collapsed: false
+            };
+        }
+    });
+}
+
+// Calcular fecha de una semana relativa a ganttStartDate
+function weekToDate(weekNum) {
+    const d = new Date(ganttStartDate);
+    d.setDate(d.getDate() + (weekNum - 1) * 7);
+    return d;
+}
+
+function formatDate(d) {
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Generar cabecera del timeline (meses + semanas)
+function buildGanttHeader(totalWeeks) {
+    const monthRow = document.createElement('div');
+    monthRow.className = 'gantt-header-months';
+    const weekRow = document.createElement('div');
+    weekRow.className = 'gantt-header-weeks';
+
+    let lastMonth = null;
+    let monthSpan = 0;
+    let monthCells = [];
+
+    for (let w = 1; w <= totalWeeks; w++) {
+        const date = weekToDate(w);
+        const month = date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+
+        const wCell = document.createElement('div');
+        wCell.className = 'gantt-week-cell';
+        wCell.textContent = 'S' + w;
+        wCell.title = formatDate(date);
+        weekRow.appendChild(wCell);
+
+        if (month !== lastMonth) {
+            if (lastMonth !== null) {
+                const mCell = document.createElement('div');
+                mCell.className = 'gantt-month-cell';
+                mCell.textContent = lastMonth;
+                mCell.style.width = (monthSpan * GANTT_WEEK_PX) + 'px';
+                monthCells.push(mCell);
+            }
+            lastMonth = month;
+            monthSpan = 1;
+        } else {
+            monthSpan++;
+        }
+    }
+    if (lastMonth) {
+        const mCell = document.createElement('div');
+        mCell.className = 'gantt-month-cell';
+        mCell.textContent = lastMonth;
+        mCell.style.width = (monthSpan * GANTT_WEEK_PX) + 'px';
+        monthCells.push(mCell);
+    }
+    monthCells.forEach(c => monthRow.appendChild(c));
+
+    return { monthRow, weekRow };
+}
+
+// Renderizar el modal completo del Gantt
+function renderPlanningModal() {
+    if (!parsedData) { alert('Carga primero un presupuesto BC3.'); return; }
+
+    ganttTasks = getGanttTasks();
+    const loaded = ganttLoad();
+    if (!loaded || Object.keys(ganttState).length === 0) {
+        ganttState = {};
+        initGanttStateAuto(ganttTasks, ganttTotalWeeks);
+        ganttSave();
+    }
+
+    const modal = document.getElementById('planningModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    rebuildGanttDOM();
+}
+
+function rebuildGanttDOM() {
+    const container = document.getElementById('ganttContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const totalWeeks = ganttTotalWeeks;
+
+    // ---- Cabecera grid ----
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'gantt-table-wrap';
+
+    // Columna izquierda: nombres de tarea (ancho redimensionable)
+    const leftCol = document.createElement('div');
+    leftCol.className = 'gantt-left-col';
+    leftCol.style.width = ganttLeftColWidth + 'px';
+    leftCol.style.minWidth = ganttLeftColWidth + 'px';
+
+    const leftHeader = document.createElement('div');
+    leftHeader.className = 'gantt-left-header';
+    leftHeader.textContent = 'Tarea';
+    leftCol.appendChild(leftHeader);
+
+    // Handle de resize en el borde derecho de la columna
+    const colResizeHandle = document.createElement('div');
+    colResizeHandle.className = 'gantt-col-resize-handle';
+    colResizeHandle.title = 'Arrastrar para cambiar el ancho de la columna';
+    colResizeHandle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        ganttColDrag = { startX: e.clientX, startWidth: ganttLeftColWidth };
+        document.addEventListener('mousemove', doGanttColResize);
+        document.addEventListener('mouseup', stopGanttColResize);
+    });
+    leftCol.appendChild(colResizeHandle);
+
+    // Columna derecha: timeline
+    const rightCol = document.createElement('div');
+    rightCol.className = 'gantt-right-col';
+
+    const { monthRow, weekRow } = buildGanttHeader(totalWeeks);
+    const headerWrap = document.createElement('div');
+    headerWrap.className = 'gantt-header-wrap';
+    headerWrap.appendChild(monthRow);
+    headerWrap.appendChild(weekRow);
+    rightCol.appendChild(headerWrap);
+
+    // Filas de tareas
+    const bodyWrap = document.createElement('div');
+    bodyWrap.className = 'gantt-body';
+
+    ganttTasks.forEach(task => {
+        const st = ganttState[task.id];
+        if (!st) return;
+
+        // Verificar si el padre está colapsado
+        if (task.parentId && ganttState[task.parentId] && ganttState[task.parentId].collapsed) {
+            return;
+        }
+
+        // Fila nombre
+        const nameRow = document.createElement('div');
+        nameRow.className = 'gantt-name-row gantt-depth-' + task.depth;
+        nameRow.dataset.taskId = task.id;
+
+        if (task.hasKids) {
+            const toggle = document.createElement('span');
+            toggle.className = 'gantt-toggle';
+            toggle.textContent = st.collapsed ? '▶' : '▼';
+            toggle.addEventListener('click', () => {
+                ganttState[task.id].collapsed = !ganttState[task.id].collapsed;
+                ganttSave();
+                rebuildGanttDOM();
+            });
+            nameRow.appendChild(toggle);
+        } else {
+            const spacer = document.createElement('span');
+            spacer.className = 'gantt-toggle-spacer';
+            nameRow.appendChild(spacer);
+        }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'gantt-task-name';
+        nameSpan.title = task.summary + ' — ' + task.price.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+        nameSpan.textContent = task.summary;
+        nameRow.appendChild(nameSpan);
+        leftCol.appendChild(nameRow);
+
+        // Fila barra
+        const barRow = document.createElement('div');
+        barRow.className = 'gantt-bar-row';
+        barRow.style.width = (totalWeeks * GANTT_WEEK_PX) + 'px';
+        barRow.dataset.taskId = task.id;
+
+        // Grid de fondo
+        for (let w = 1; w <= totalWeeks; w++) {
+            const cell = document.createElement('div');
+            cell.className = 'gantt-bg-cell' + (w % 4 === 0 ? ' gantt-bg-month-end' : '');
+            barRow.appendChild(cell);
+        }
+
+        // Barra de la tarea
+        const bar = document.createElement('div');
+        bar.className = 'gantt-bar gantt-bar-depth-' + task.depth;
+        bar.dataset.taskId = task.id;
+        positionBar(bar, st.startWeek, st.durationWeeks, totalWeeks);
+
+        const resizeL = document.createElement('div');
+        resizeL.className = 'gantt-resize gantt-resize-l';
+        resizeL.addEventListener('mousedown', e => startGanttDrag(e, task.id, 'left'));
+
+        const barLabel = document.createElement('span');
+        barLabel.className = 'gantt-bar-label';
+        barLabel.textContent = task.summary.length > 18 ? task.summary.slice(0, 16) + '…' : task.summary;
+
+        const resizeR = document.createElement('div');
+        resizeR.className = 'gantt-resize gantt-resize-r';
+        resizeR.addEventListener('mousedown', e => startGanttDrag(e, task.id, 'right'));
+
+        bar.appendChild(resizeL);
+        bar.appendChild(barLabel);
+        bar.appendChild(resizeR);
+        bar.addEventListener('mousedown', e => {
+            if (e.target === resizeL || e.target === resizeR) return;
+            startGanttDrag(e, task.id, 'move');
+        });
+
+        barRow.appendChild(bar);
+        bodyWrap.appendChild(barRow);
+    });
+
+    rightCol.appendChild(bodyWrap);
+    tableWrap.appendChild(leftCol);
+    tableWrap.appendChild(rightCol);
+    container.appendChild(tableWrap);
+
+    // Sincronizar scroll vertical entre columnas
+    const rightScroll = rightCol.querySelector('.gantt-body') || rightCol;
+    leftCol.addEventListener('scroll', () => { rightCol.scrollTop = leftCol.scrollTop; });
+}
+
+function positionBar(barEl, startWeek, durationWeeks, totalWeeks) {
+    const left = (startWeek - 1) * GANTT_WEEK_PX;
+    const width = Math.max(GANTT_WEEK_PX * 0.5, durationWeeks * GANTT_WEEK_PX - 2);
+    barEl.style.left = left + 'px';
+    barEl.style.width = width + 'px';
+}
+
+// ---- Resize columna izquierda ----
+function doGanttColResize(e) {
+    if (!ganttColDrag) return;
+    const newWidth = Math.max(140, Math.min(520, ganttColDrag.startWidth + (e.clientX - ganttColDrag.startX)));
+    ganttLeftColWidth = newWidth;
+    // Actualizar columna izquierda en vivo sin rerenderizar
+    const leftColEl = document.querySelector('#ganttContainer .gantt-left-col');
+    if (leftColEl) {
+        leftColEl.style.width = newWidth + 'px';
+        leftColEl.style.minWidth = newWidth + 'px';
+    }
+}
+function stopGanttColResize() {
+    ganttColDrag = null;
+    document.removeEventListener('mousemove', doGanttColResize);
+    document.removeEventListener('mouseup', stopGanttColResize);
+}
+
+// ---- Drag & Drop del Gantt ----
+let ganttDrag = null;
+
+function startGanttDrag(e, taskId, mode) {
+    e.preventDefault();
+    e.stopPropagation();
+    const st = ganttState[taskId];
+    if (!st) return;
+
+    // Buscar el parentId de esta tarea para aplicar clamping jerárquico
+    const taskObj = ganttTasks.find(t => t.id === taskId);
+    const parentId = taskObj ? taskObj.parentId : null;
+
+    ganttDrag = {
+        taskId, mode, parentId,
+        startX: e.clientX,
+        origStart: st.startWeek,
+        origDur: st.durationWeeks
+    };
+
+    document.addEventListener('mousemove', doGanttDrag);
+    document.addEventListener('mouseup', stopGanttDrag);
+}
+
+function doGanttDrag(e) {
+    if (!ganttDrag) return;
+    const { taskId, mode, parentId, startX, origStart, origDur } = ganttDrag;
+    const dx = e.clientX - startX;
+    const weeksDelta = Math.round(dx / GANTT_WEEK_PX);
+    const st = ganttState[taskId];
+    const total = ganttTotalWeeks;
+
+    // Límites del padre (si existe) — la tarea hija nunca puede salir de ellos
+    const pst = parentId && ganttState[parentId];
+    const pMin = pst ? pst.startWeek : 1;
+    const pMax = pst ? pst.startWeek + pst.durationWeeks - 1 : total;
+
+    if (mode === 'move') {
+        const raw = Math.max(pMin, Math.min(pMax - origDur + 1, origStart + weeksDelta));
+        st.startWeek = raw;
+        st.durationWeeks = Math.min(origDur, pMax - raw + 1);
+    } else if (mode === 'right') {
+        const maxDur = pMax - st.startWeek + 1;
+        st.durationWeeks = Math.max(1, Math.min(maxDur, origDur + weeksDelta));
+    } else if (mode === 'left') {
+        const newStart = Math.max(pMin, Math.min(origStart + origDur - 1, origStart + weeksDelta));
+        const newDur = origStart + origDur - newStart;
+        st.startWeek = newStart;
+        st.durationWeeks = Math.max(1, Math.min(newDur, pMax - newStart + 1));
+    }
+
+    // Actualizar barra en DOM sin rerenderizar todo
+    const bar = document.querySelector(`.gantt-bar[data-task-id="${taskId}"]`);
+    if (bar) positionBar(bar, st.startWeek, st.durationWeeks, total);
+}
+
+function stopGanttDrag() {
+    if (!ganttDrag) return;
+    ganttSave();
+    ganttDrag = null;
+    document.removeEventListener('mousemove', doGanttDrag);
+    document.removeEventListener('mouseup', stopGanttDrag);
+}
+
+// ---- Exportar Gantt a Excel (tabla estructurada) ----
+function exportGanttToExcel() {
+    if (typeof XLSX === 'undefined') { alert('Librería Excel no disponible.'); return; }
+    const wb = XLSX.utils.book_new();
+
+    const rows = [['Nivel', 'Código', 'Tarea', 'Semana Inicio', 'Fecha Inicio', 'Semana Fin', 'Fecha Fin', 'Duración (sem.)', 'Duración (días)', 'Importe (€)']];
+
+    ganttTasks.forEach(task => {
+        const st = ganttState[task.id];
+        if (!st) return;
+        const startDate = weekToDate(st.startWeek);
+        const endDate = weekToDate(st.startWeek + st.durationWeeks);
+        rows.push([
+            task.depth,
+            task.code,
+            task.summary,
+            st.startWeek,
+            formatDate(startDate),
+            formatDate(endDate),
+            st.startWeek + st.durationWeeks - 1,
+            st.durationWeeks,
+            st.durationWeeks * 7,
+            parseFloat(task.price.toFixed(2))
+        ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+        { wch: 6 }, { wch: 14 }, { wch: 45 }, { wch: 14 }, { wch: 14 },
+        { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 }
+    ];
+    // Cabecera en negrita
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
+        if (cell) cell.s = { font: { bold: true } };
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Planning Gantt');
+    const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+    XLSX.writeFile(wb, baseName + '_planning.xlsx');
+}
+
+// ---- Exportar Gantt a PDF (A4 landscape, 26 sem/página) ----
+function exportGanttToPdf() {
+    const JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+    if (!JsPDF) { alert('Librería PDF no disponible.'); return; }
+
+    const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const WEEKS_PER_PAGE = 26;
+    const TASK_COL_W = 65;    // mm columna tareas
+    const WEEK_W = (297 - TASK_COL_W - 20) / WEEKS_PER_PAGE; // mm por semana
+    const ROW_H = 7;          // mm por fila
+    const HEADER_H = 14;      // mm cabecera
+    const MARGIN = 10;        // mm márgenes
+    const PAGE_W = 297;
+    const PAGE_H = 210;
+
+    const totalPages = Math.ceil(ganttTotalWeeks / WEEKS_PER_PAGE);
+
+    for (let page = 0; page < totalPages; page++) {
+        if (page > 0) doc.addPage();
+        const weekStart = page * WEEKS_PER_PAGE + 1;
+        const weekEnd = Math.min(weekStart + WEEKS_PER_PAGE - 1, ganttTotalWeeks);
+
+        // Título
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        const projectTitle = (parsedData.properties && parsedData.properties.description) || currentFileName.replace(/\.[^/.]+$/, '');
+        doc.text('PLANNING: ' + projectTitle, MARGIN, MARGIN - 2);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Semanas ' + weekStart + '–' + weekEnd + '   |   Página ' + (page + 1) + ' de ' + totalPages, PAGE_W - MARGIN, MARGIN - 2, { align: 'right' });
+
+        let y = MARGIN;
+
+        // Cabecera: columna tareas + semanas
+        doc.setFillColor(80, 20, 40);
+        doc.rect(MARGIN, y, TASK_COL_W, HEADER_H / 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Tarea', MARGIN + 2, y + HEADER_H / 2 - 2);
+
+        // Cabecera semanas
+        for (let w = weekStart; w <= weekEnd; w++) {
+            const x = MARGIN + TASK_COL_W + (w - weekStart) * WEEK_W;
+            doc.setFillColor(80, 20, 40);
+            doc.rect(x, y, WEEK_W, HEADER_H / 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(5.5);
+            doc.text('S' + w, x + WEEK_W / 2, y + HEADER_H / 2 - 2, { align: 'center' });
+        }
+        // Subrow: meses
+        let mX = MARGIN + TASK_COL_W;
+        let mMonth = null; let mStart = mX;
+        for (let w = weekStart; w <= weekEnd; w++) {
+            const dt = weekToDate(w);
+            const mon = dt.toLocaleDateString('es-ES', { month: 'short' });
+            if (mon !== mMonth) {
+                if (mMonth) {
+                    doc.setFillColor(120, 40, 60);
+                    doc.rect(mStart, y + HEADER_H / 2, mX - mStart, HEADER_H / 2, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(5.5);
+                    doc.text(mMonth, mStart + (mX - mStart) / 2, y + HEADER_H - 2, { align: 'center' });
+                }
+                mMonth = mon; mStart = mX;
+            }
+            mX += WEEK_W;
+        }
+        if (mMonth) {
+            doc.setFillColor(120, 40, 60);
+            doc.rect(mStart, y + HEADER_H / 2, mX - mStart, HEADER_H / 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(5.5);
+            doc.text(mMonth, mStart + (mX - mStart) / 2, y + HEADER_H - 2, { align: 'center' });
+        }
+
+        y += HEADER_H;
+
+        // Filas de tareas
+        doc.setFont('helvetica', 'normal');
+        let rowIdx = 0;
+        ganttTasks.forEach(task => {
+            const st = ganttState[task.id];
+            if (!st) return;
+            if (task.parentId && ganttState[task.parentId] && ganttState[task.parentId].collapsed) return;
+
+            const ry = y + rowIdx * ROW_H;
+            if (ry + ROW_H > PAGE_H - MARGIN) return;
+
+            // Fondo alternado
+            doc.setFillColor(rowIdx % 2 === 0 ? 252 : 245, rowIdx % 2 === 0 ? 252 : 245, rowIdx % 2 === 0 ? 252 : 245);
+            doc.rect(MARGIN, ry, PAGE_W - 2 * MARGIN, ROW_H, 'F');
+
+            // Texto tarea (sangría por nivel)
+            const indent = (task.depth - 1) * 3;
+            doc.setFontSize(task.depth === 1 ? 6.5 : 5.5);
+            doc.setFont('helvetica', task.depth === 1 ? 'bold' : 'normal');
+            doc.setTextColor(30, 30, 30);
+            const label = task.summary.length > 38 ? task.summary.slice(0, 36) + '…' : task.summary;
+            doc.text(label, MARGIN + 2 + indent, ry + ROW_H - 2);
+
+            // Barra
+            const barStart = st.startWeek;
+            const barDur = st.durationWeeks;
+            const visStart = Math.max(weekStart, barStart);
+            const visEnd = Math.min(weekEnd, barStart + barDur - 1);
+
+            if (visEnd >= visStart) {
+                const bx = MARGIN + TASK_COL_W + (visStart - weekStart) * WEEK_W;
+                const bw = (visEnd - visStart + 1) * WEEK_W - 1;
+                const bh = ROW_H - 2;
+                const colors = [[128, 0, 32], [180, 60, 80], [200, 100, 110]];
+                const c = colors[Math.min(task.depth - 1, 2)];
+                doc.setFillColor(c[0], c[1], c[2]);
+                doc.roundedRect(bx, ry + 1, bw, bh, 1, 1, 'F');
+            }
+
+            // Grid vertical de semanas
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.1);
+            for (let w = weekStart; w <= weekEnd; w++) {
+                const wx = MARGIN + TASK_COL_W + (w - weekStart) * WEEK_W;
+                doc.line(wx, ry, wx, ry + ROW_H);
+            }
+
+            rowIdx++;
+        });
+
+        // Borde general
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+        doc.rect(MARGIN, MARGIN, PAGE_W - 2 * MARGIN, PAGE_H - 2 * MARGIN);
+
+        // Pie de página
+        doc.setFontSize(6);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Generado por BC3 Viewer — ' + new Date().toLocaleDateString('es-ES'), MARGIN, PAGE_H - MARGIN + 4);
+    }
+
+    const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+    doc.save(baseName + '_planning.pdf');
+}
+
+// ---- Inicializar eventos del modal Planning ----
+const planningBtn = document.getElementById('planningBtn');
+const planningModal = document.getElementById('planningModal');
+const closePlanningBtn = document.getElementById('closePlanningBtn');
+const ganttStartDateInput = document.getElementById('ganttStartDate');
+const ganttWeeksInput = document.getElementById('ganttWeeks');
+const ganttResetBtn = document.getElementById('ganttResetBtn');
+const exportGanttPdfBtn = document.getElementById('exportGanttPdfBtn');
+const exportGanttExcelBtn = document.getElementById('exportGanttExcelBtn');
+
+if (planningBtn) {
+    planningBtn.addEventListener('click', () => {
+        // Inicializar fecha y semanas antes de renderizar
+        if (ganttStartDateInput && ganttStartDateInput.value) {
+            ganttStartDate = new Date(ganttStartDateInput.value);
+        } else if (ganttStartDateInput) {
+            ganttStartDate = new Date();
+            const iso = ganttStartDate.toISOString().split('T')[0];
+            ganttStartDateInput.value = iso;
+        }
+        if (ganttWeeksInput && ganttWeeksInput.value) {
+            ganttTotalWeeks = parseInt(ganttWeeksInput.value) || 26;
+        }
+        renderPlanningModal();
+    });
+}
+
+if (closePlanningBtn && planningModal) {
+    closePlanningBtn.addEventListener('click', () => {
+        planningModal.style.display = 'none';
+    });
+}
+
+if (planningModal) {
+    planningModal.addEventListener('click', e => {
+        if (e.target === planningModal) planningModal.style.display = 'none';
+    });
+}
+
+if (ganttStartDateInput) {
+    ganttStartDateInput.addEventListener('change', () => {
+        ganttStartDate = new Date(ganttStartDateInput.value);
+        if (planningModal && planningModal.style.display !== 'none') rebuildGanttDOM();
+        ganttSave();
+    });
+}
+
+if (ganttWeeksInput) {
+    ganttWeeksInput.addEventListener('change', () => {
+        ganttTotalWeeks = Math.max(4, Math.min(156, parseInt(ganttWeeksInput.value) || 26));
+        ganttWeeksInput.value = ganttTotalWeeks;
+        if (planningModal && planningModal.style.display !== 'none') rebuildGanttDOM();
+        ganttSave();
+    });
+}
+
+if (ganttResetBtn) {
+    ganttResetBtn.addEventListener('click', () => {
+        if (!confirm('¿Reiniciar el planning? Se perderá la distribución actual.')) return;
+        ganttState = {};
+        initGanttStateAuto(ganttTasks, ganttTotalWeeks);
+        ganttSave();
+        rebuildGanttDOM();
+    });
+}
+
+if (exportGanttPdfBtn) {
+    exportGanttPdfBtn.addEventListener('click', exportGanttToPdf);
+}
+if (exportGanttExcelBtn) {
+    exportGanttExcelBtn.addEventListener('click', exportGanttToExcel);
+}
