@@ -188,7 +188,13 @@ Todas las librerias JS se sirven **localmente**, sin dependencia de CDN externos
 
 ## Historial de Versiones
 
-### Version 1.2.0 — 03/07/2026 (Actual)
+### Version 1.3.0 — 03/07/2026 (Actual)
+* **Columna Proporción en Presupuesto:** Nueva columna en el árbol del presupuesto que agrupa e integra el `% PEM` y el desglose de recursos (barras de colores) de los capítulos, manteniendo el comportamiento y visibilidad de las columnas originales de cantidad y precio.
+* **Cabecera Compacta y Adaptativa:** Reorganización del header en 4 grupos unificados y un menú desplegable de ajustes engranaje `⚙️` en la esquina superior derecha para limpiar la interfaz.
+* **Botón Pulsante de Carga Central:** Botón "🚀 CARGAR ARCHIVO .BC3" en la pantalla de inicio con aura/brillo animado y procesamiento automático directo del archivo al seleccionarlo.
+* **Módulo de Estadísticas Gantt:** Cuadro de KPIs avanzado de plazos y costos del Planning que calcula días restantes de obra y los promedios requeridos por día, semana y mes de forma dinámica.
+
+### Version 1.2.0 — 03/07/2026
 * **Certificaciones Mensuales de Obra:** Módulo interactivo en el panel de detalles para certificar cantidades mes a mes (Mes 1 al Mes 12) sobre cada partida, calculando acumulados, importes y porcentajes de avance certificados.
 * **Sincronización Gantt y Avances:** El avance (%) de cada tarea se sincroniza automáticamente con el volumen acumulado certificado, actualizando dinámicamente las barras de progreso del diagrama de Gantt.
 * **Curva S Dinámica:** La línea de "Ejecutado" en la Curva S ahora se calcula de manera exacta a partir de las certificaciones reales registradas por semanas, sustituyendo la estimación lineal del Gantt.

@@ -17,11 +17,28 @@ header("Pragma: no-cache");
 <body>
     <div class="app-container">
         <header class="main-header">
-            <div class="logo">BC3 VIEWER</div>
+            <div class="left-header-section" style="display:flex; align-items:center; gap:16px;">
+                <div class="logo">BC3 VIEWER</div>
+                <!-- Contenedor PEM & PEC Widget (ahora segundo, a la derecha del nombre) -->
+                <div class="project-info" id="projectInfo" style="display:none; flex-direction:column; align-items:flex-start;">
+                    <div class="budget-widget" style="margin:0;">
+                        <div class="budget-card pem-card" id="budgetTotal">
+                            <span class="lbl">PEM</span>
+                            <span class="val">0,00 €</span>
+                        </div>
+                        <div class="budget-card pec-card" id="budgetTotalPEC" style="display:none;">
+                            <span class="lbl">PEC</span>
+                            <span class="val">0,00 €</span>
+                        </div>
+                    </div>
+                    <div id="stats" style="font-size: 0.68rem; color: #888; margin-top: 2px;"></div>
+                </div>
+            </div>
+
             <div class="upload-area">
                 <form id="uploadForm">
-                    <!-- Contenedor: Carga y Procesado -->
-                    <div class="control-container">
+                    <!-- Grupo 1: Carga y Procesado -->
+                    <div class="control-container" id="uploadGroup">
                         <label for="bc3file" class="upload-btn">
                             <span id="fileName">SELECCIONAR ARCHIVO .BC3</span>
                             <input type="file" id="bc3file" name="bc3file" accept=".bc3" hidden>
@@ -29,65 +46,46 @@ header("Pragma: no-cache");
                         <button type="submit" class="process-btn">PROCESA</button>
                     </div>
 
-                    <!-- Contenedor: DASHBOARD -->
-                    <div class="control-container" id="dashboardContainer" style="display:none;">
-                        <button type="button" id="dashboardBtn" class="dashboard-btn">DASHBOARD</button>
+                    <!-- Grupo 2: Vistas Principales (Segmented Control) -->
+                    <div class="control-container segmented-control" id="viewsGroup" style="display:none;">
+                        <button type="button" id="presupuestoBtn" class="nav-tab active">🌳 PRESUPUESTO</button>
+                        <button type="button" id="pricesBtn" class="nav-tab">🏷️ PRECIOS</button>
                     </div>
 
-                    <!-- Contenedor: PRESUPUESTO, PRECIOS, PLANNING & CERTIFICACIONES -->
-                    <div class="control-container" id="vizContainer" style="display:none;">
-                        <button type="button" id="presupuestoBtn" class="presupuesto-btn active">PRESUPUESTO</button>
-                        <button type="button" id="pricesBtn" class="prices-btn">PRECIOS</button>
-                        <button type="button" id="planningBtn" class="planning-btn">PLANNING</button>
-                        <button type="button" id="certObrasBtn" class="cert-obras-btn">CERTIFICACIONES</button>
-                        <button type="button" id="chaptersBtn" class="chapters-btn">CAP&#205;TULOS</button>
+                    <!-- Grupo 3: Herramientas Auxiliares -->
+                    <div class="control-container tools-group" id="toolsGroup" style="display:none;">
+                        <button type="button" id="dashboardBtn" class="tool-btn">📊 DASHBOARD</button>
+                        <button type="button" id="planningBtn" class="tool-btn">📅 PLANNING</button>
+                        <button type="button" id="certObrasBtn" class="tool-btn">🏗️ CERTIF.</button>
+                        <button type="button" id="compareBtn" class="tool-btn">🔍 COMPARAR</button>
                     </div>
 
-                    <!-- Contenedor: COEFICIENTES -->
-                    <div class="control-container ops-container" id="coeffsContainer" style="display:none;">
-                        <button type="button" id="toggleCoeffsBtn" class="coeffs-toggle-btn">COEFICIENTES</button>
-                    </div>
-
-                    <!-- Contenedor: COMPARAR -->
-                    <div class="control-container" id="compareContainer" style="display:none;">
-                        <button type="button" id="compareBtn" class="compare-btn">COMPARAR</button>
-                    </div>
-
-                    <!-- Contenedor: GUARDAR & EXPORTAR -->
-                    <div class="control-container" id="exportContainer" style="display:none;">
-                        <button type="button" id="saveBtn" class="save-btn" style="display:none;">GUARDAR</button>
+                    <!-- Grupo 4: Guardar y Exportar -->
+                    <div class="control-container export-group" id="exportGroup" style="display:none;">
+                        <button type="button" id="saveBtn" class="save-btn" style="display:none;">💾 GUARDAR</button>
                         <div class="dropdown" id="exportDropdown">
-                            <button type="button" class="export-btn dropdown-toggle">EXPORTAR ▾</button>
+                            <button type="button" class="export-btn dropdown-toggle">📤 EXPORTAR ▾</button>
                             <div class="dropdown-content">
-                                <button type="button" id="exportPdfBtn">EXPORTAR A PDF</button>
-                                <button type="button" id="exportExcelBtn">EXPORTAR A EXCEL</button>
+                                <button type="button" id="exportPdfBtn">📄 EXPORTAR A PDF</button>
+                                <button type="button" id="exportExcelBtn">📊 EXPORTAR A EXCEL</button>
                                 <button type="button" id="exportBc3Btn" style="color: #059669; font-weight: 600;">⬇ GUARDAR COMO BC3</button>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
-            
-            <!-- Contenedor 5: PEM & PEC Widget -->
-            <div class="project-info" id="projectInfo" style="display:none;">
-                <div class="budget-widget">
-                    <div class="budget-card pem-card" id="budgetTotal">
-                        <span class="lbl">PEM</span>
-                        <span class="val">0,00 €</span>
-                    </div>
-                    <div class="budget-card pec-card" id="budgetTotalPEC" style="display:none;">
-                        <span class="lbl">PEC</span>
-                        <span class="val">0,00 €</span>
+
+            <!-- Botones del extremo derecho: Menú Ajustes (Engranaje) -->
+            <div class="right-controls">
+                <div class="dropdown" id="settingsDropdown">
+                    <button type="button" class="settings-toggle-btn" id="settingsBtn" aria-label="Ajustes" title="Ajustes">⚙️</button>
+                    <div class="dropdown-content dropdown-content-right" style="right: 0; left: auto; min-width: 160px;">
+                        <button type="button" id="toggleCoeffsBtn" style="display:none; justify-content:flex-start; gap:8px; width:100%; border:none; background:none; text-align:left; padding:8px 12px; cursor:pointer;"><span style="font-size:1rem;">⚙️</span> Coeficientes</button>
+                        <button type="button" id="auditLogBtn" style="display:none; justify-content:flex-start; gap:8px; width:100%; border:none; background:none; text-align:left; padding:8px 12px; cursor:pointer;"><span style="font-size:1rem;">📜</span> Auditoría</button>
+                        <button type="button" id="themeToggle" style="display:flex; justify-content:flex-start; gap:8px; width:100%; border:none; background:none; text-align:left; padding:8px 12px; cursor:pointer;"><span id="themeToggleIcon" style="font-size:1rem;">🌙</span> Tema Visual</button>
+                        <button type="button" id="infoBtn" style="display:flex; justify-content:flex-start; gap:8px; width:100%; border:none; background:none; text-align:left; padding:8px 12px; cursor:pointer;"><span style="font-size:1rem;">ℹ️</span> Información</button>
                     </div>
                 </div>
-                <div id="stats" style="font-size: 0.7em; color: #888; margin-top: 4px; text-align: center;"></div>
-            </div>
-
-            <!-- Botones de la derecha: Tema, Auditoría e Info -->
-            <div class="right-controls">
-                <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Cambiar tema">🌙</button>
-                <button type="button" id="auditLogBtn" class="audit-log-btn" aria-label="Auditoría de Cambios" title="Auditoría de Cambios" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px; display: none; filter: grayscale(0.2); transition: transform 0.2s;">📜</button>
-                <button type="button" id="infoBtn" class="info-btn" aria-label="Información">ℹ️</button>
             </div>
         </header>
 
@@ -219,9 +217,12 @@ header("Pragma: no-cache");
                             <strong>🛠️ Herramienta en Desarrollo Activo:</strong> Este proyecto es de código abierto. Si tienes sugerencias, has detectado algún bug o deseas proponer mejoras, ponte en contacto con el creador original <strong>Rafael Roa</strong> (a través de <a href="https://www.linkedin.com/in/rafaroa/" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">LinkedIn</a>, su web <a href="https://www.rafarq.com" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">www.rafarq.com</a> o su <a href="https://rafarq.com/podcast" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">Podcast de Arquitectura</a>).
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; justify-content: center; background: var(--bg-hover); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
-                            <span>👉</span>
-                            <span>Arrastra un archivo <strong>.bc3</strong> aquí o haz clic en <strong>"SELECCIONAR ARCHIVO .BC3"</strong> arriba para comenzar</span>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 0.8rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; justify-content: center; background: var(--bg-hover); padding: 16px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                            <span>👉 Arrastra un archivo <strong>.bc3</strong> aquí, o haz clic en el botón de abajo para buscar:</span>
+                            
+                            <label for="bc3file" class="welcome-load-btn">
+                                🚀 CARGAR ARCHIVO .BC3
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -443,52 +444,11 @@ header("Pragma: no-cache");
                 </div>
             </div>
 
-            <!-- Vista Resumen por Capítulos -->
-            <div class="chapters-panel" id="chaptersPanel" style="display:none;">
-                <!-- KPI strip -->
-                <div id="chaptersKpiStrip" style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; padding:20px 24px 14px; border-bottom:1px solid var(--border-color); background:var(--hover-bg,var(--bg-hover));"></div>
-                <!-- Header + search -->
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 10px;">
-                    <div>
-                        <h2 style="margin:0; font-size:1.1rem;">Resumen por Cap&#237;tulos</h2>
-                        <span style="font-size:0.78rem; color:var(--text-secondary);">Desglose de costes por tipo de recurso</span>
-                    </div>
-                    <input type="text" id="chaptersSearch" placeholder="Buscar cap&#237;tulo..." autocomplete="off"
-                        style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; font-size:0.82rem; background:var(--bg-color); color:var(--text-primary); outline:none; width:220px;">
-                </div>
-                <!-- Legend -->
-                <div style="display:flex; gap:16px; padding:0 24px 10px; font-size:0.75rem; color:var(--text-secondary); flex-wrap:wrap;">
-                    <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin-right:4px;"></span>Mano de Obra</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:4px;"></span>Materiales</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:2px;margin-right:4px;"></span>Maquinaria</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;background:#8b5cf6;border-radius:2px;margin-right:4px;"></span>Subcontratas</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;background:#94a3b8;border-radius:2px;margin-right:4px;"></span>Resto</span>
-                </div>
-                <!-- Table -->
-                <div class="chapters-table-container">
-                    <table class="chapters-table" id="chaptersTable">
-                        <thead>
-                            <tr>
-                                <th style="width:120px;">C&#243;digo</th>
-                                <th>Cap&#237;tulo</th>
-                                <th style="width:130px; text-align:right;">Importe (€)</th>
-                                <th style="width:80px; text-align:right;">% PEM</th>
-                                <th style="width:280px;">Composici&#243;n de recursos</th>
-                                <th style="width:90px; text-align:right;">MO</th>
-                                <th style="width:90px; text-align:right;">MAT</th>
-                                <th style="width:90px; text-align:right;">MAQ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="chaptersTableBody">
-                            <!-- Injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
         </main>
         <footer class="app-footer">
             <span>&#169; Licencia Open Source - Software Libre y de Derechos Abiertos</span>
-            <span>V1.0.0</span>
+            <span>V1.3.0</span>
         </footer>
     </div>
     <!-- Dashboard Modal -->
@@ -757,7 +717,7 @@ header("Pragma: no-cache");
                 <div style="text-align: center; margin-bottom: 1.2rem;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.25rem;">ℹ️</div>
                     <h4 style="font-size: 1.2rem; margin: 0; color: var(--accent);">Visualizador BC3 Premium</h4>
-                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Versión 1.2.0</span>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Versión 1.3.0</span>
                 </div>
                 
                 <p style="font-size: 0.85rem; margin-bottom: 1rem;">Esta herramienta permite la importación, visualización y análisis interactivo de presupuestos en formato <strong>Standard FIEBDC-3 (.bc3)</strong>.</p>
@@ -778,10 +738,26 @@ header("Pragma: no-cache");
                 <details class="version-history-details" style="margin-top: 1.2rem;">
                     <summary>Historial de Versiones</summary>
                     <div class="version-history-body">
-                        <!-- Versión 1.2.0 -->
+                        <!-- Versión 1.3.0 -->
                         <div style="margin-bottom: 1rem; border-left: 3px solid var(--accent); padding-left: 8px;">
                             <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--text-primary);">
-                                <span>V1.2.0 (Actual)</span>
+                                <span>V1.3.0 (Actual)</span>
+                                <span>03/07/2026</span>
+                             </div>
+                             <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;">Autor: Jose Manuel Caamaño</div>
+                             <ul style="margin: 0; padding-left: 1rem; color: var(--text-secondary); font-size: 0.75rem;">
+                                 <li>Integración de % PEM y gráfico de desglose de recursos en las filas de capítulos del Presupuesto.</li>
+                                 <li>Cabecera compacta y adaptativa con menú de ajustes unificado en engranaje ⚙️.</li>
+                                 <li>Estadísticas económicas y de avance en tiempo real dentro del Planning Gantt.</li>
+                                 <li>Indicadores de días restantes de obra y medias de certificación diaria, semanal y mensual.</li>
+                                 <li>Exportación e importación completa en formato estándar FIEBDC-3 (.bc3).</li>
+                                 <li>Exportación optimizada a PDF de certificaciones mensuales con área de firmas.</li>
+                             </ul>
+                        </div>
+                        <!-- Versión 1.2.0 -->
+                        <div style="margin-bottom: 1rem; border-left: 3px solid var(--border-color); padding-left: 8px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--text-primary);">
+                                <span>V1.2.0</span>
                                 <span>03/07/2026</span>
                              </div>
                              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;">Autor: Jose Manuel Caamaño</div>
@@ -961,6 +937,9 @@ header("Pragma: no-cache");
         <button type="button" id="globalSearchNext" class="global-search-nav" title="Siguiente (Enter)">▼</button>
         <button type="button" id="globalSearchClose" class="global-search-close" title="Cerrar (Esc)">✕</button>
     </div>
+
+    <!-- Área de impresión oculta para Certificación en PDF -->
+    <div id="certPrintArea"></div>
 
     <script src="jspdf.umd.min.js"></script>
     <script src="jspdf.plugin.autotable.min.js"></script>

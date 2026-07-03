@@ -40,24 +40,28 @@ body {
 /* Header */
 .main-header {
     background-color: var(--bg-color);
-    padding: 1rem 2rem;
+    padding: 0.6rem 2rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 70px;
+    min-height: 56px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .logo {
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     color: var(--accent);
 }
 
 .upload-area form {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .upload-btn {
@@ -184,13 +188,14 @@ body {
     /* 
        Updated Layout (Merged Hierarchy):
        Code: 190px (Includes indent and icon)
-       Unit: 40px
+       Unit: 45px
        Summary: 1fr
        Quantity: 80px
-       Price: 110px
+       Price: 100px
+       Proportion: 180px
        Amount: 110px
-    */
-    grid-template-columns: 190px 40px 1fr 80px 150px 150px;
+     */
+    grid-template-columns: 190px 45px 1fr 80px 100px 180px 110px;
     background-color: var(--table-header-bg);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
@@ -212,7 +217,7 @@ body {
 /* Grid Tree Node */
 .tree-node-row {
     display: grid;
-    grid-template-columns: 190px 40px 1fr 80px 150px 150px;
+    grid-template-columns: 190px 45px 1fr 80px 100px 180px 110px;
     align-items: center;
     border-bottom: 1px solid var(--table-border);
     cursor: pointer;
@@ -251,6 +256,7 @@ body {
 .col-unit,
 .col-quantity,
 .col-price,
+.col-proportion,
 .col-amount {
     padding: 4px 8px;
     border-right: 1px solid var(--table-border);
@@ -258,6 +264,12 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: inherit;
+}
+
+.col-proportion {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .col-summary {
@@ -1810,16 +1822,17 @@ body.dark-theme .control-container {
 .main-header button, 
 .main-header .upload-btn, 
 .main-header .dropdown-toggle {
-    font-size: 0.75rem !important;
+    font-size: 0.72rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.05em !important;
+    letter-spacing: 0.03em !important;
     text-transform: uppercase !important;
-    padding: 0.4rem 0.8rem !important;
+    padding: 0.3rem 0.7rem !important;
     border-radius: 6px !important;
-    height: 32px !important;
+    height: 28px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    box-sizing: border-box !important;
 }
 
 .main-header .upload-btn {
@@ -1831,7 +1844,6 @@ body.dark-theme .control-container {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    box-sizing: border-box !important;
 }
 
 .main-header .upload-btn:hover {
@@ -1840,6 +1852,79 @@ body.dark-theme .control-container {
     color: var(--text-primary) !important;
 }
 
+/* --- SEGMENTED CONTROL (Vistas Principales) --- */
+.segmented-control {
+    display: inline-flex;
+    background-color: var(--hover-bg, #f1f5f9) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 2px !important;
+    gap: 2px !important;
+}
+.segmented-control .nav-tab {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary) !important;
+    padding: 0.35rem 0.8rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    height: 24px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+.segmented-control .nav-tab.active {
+    background-color: var(--accent, #3b82f6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+.segmented-control .nav-tab:hover:not(.active) {
+    background-color: rgba(0,0,0,0.05) !important;
+    color: var(--text-primary) !important;
+}
+.dark-theme .segmented-control {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+.dark-theme .segmented-control .nav-tab:hover:not(.active) {
+    background-color: rgba(255,255,255,0.05) !important;
+}
+
+/* --- TOOLS GROUP (Botonera de Herramientas Auxiliares) --- */
+.tools-group {
+    display: inline-flex !important;
+    gap: 4px !important;
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+.tools-group .tool-btn {
+    background-color: var(--bg-group, #f8fafc) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    height: 28px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+.tools-group .tool-btn:hover {
+    background-color: var(--hover-bg) !important;
+    border-color: var(--accent) !important;
+    color: var(--text-primary) !important;
+    transform: translateY(-1px) !important;
+}
+.tools-group .tool-btn:active {
+    transform: translateY(0) !important;
+}
+.dark-theme .tools-group .tool-btn {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+
 /* Contenedor de Controles de la Derecha (Tema e Info) */
 .right-controls {
     display: flex;
@@ -1847,26 +1932,36 @@ body.dark-theme .control-container {
     gap: 8px;
 }
 
-.info-btn {
-    background: none;
-    border: 1px solid var(--border-color);
-    font-size: 1.1rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: background-color 0.2s, border-color 0.2s;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    color: var(--text-primary);
+.settings-toggle-btn {
+    background-color: var(--bg-group, #f8fafc) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+    border-radius: 50% !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 0.95rem !important;
+    padding: 0 !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+.settings-toggle-btn:hover {
+    background-color: var(--hover-bg) !important;
+    border-color: var(--accent) !important;
+    color: var(--text-primary) !important;
+    transform: rotate(30deg) !important;
+}
+.dark-theme .settings-toggle-btn {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
 }
 
-.info-btn:hover {
-    background-color: var(--hover-bg);
-    border-color: var(--accent);
+.dropdown-content-right {
+    right: 0 !important;
+    left: auto !important;
 }
 
 /* REDISEÑO PEM Y PEC - LLAMATIVO Y PREMIUM */
@@ -2553,35 +2648,54 @@ body.dark-theme .editable-val[contenteditable="true"] {
     transform: scale(0.97);
 }
 
-/* Panel Resumen de Gantt (KPIs) */
+/* Panel Resumen de Gantt (KPIs estructurados) */
 .gantt-summary-bar {
     display: flex;
-    gap: 2rem;
+    justify-content: space-between;
+    gap: 1.5rem;
     margin: 0 0 15px 0;
-    padding: 10px 20px;
+    padding: 12px 20px;
     background-color: var(--card-bg, #1e293b);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
-.gantt-kpi-card {
+.gantt-kpi-group {
+    flex: 1;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gantt-kpi-group h4 {
+    margin: 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+    font-weight: 700;
+}
+
+.gantt-kpi-row {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    margin-top: 4px;
 }
 
-.gantt-kpi-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.gantt-sub-kpi {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    font-weight: 600;
 }
 
-.gantt-kpi-val {
-    font-size: 1.1rem;
-    font-weight: 700;
+.gantt-sub-kpi strong {
     color: var(--text-primary);
 }
 
@@ -3185,4 +3299,49 @@ body.dark-theme .badge-critical-tree {
     font-size: 8pt;
     color: #94a3b8;
 }
+
+/* Botón llamativo en la pantalla de bienvenida con aura/brillo */
+.welcome-load-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--accent, #3b82f6), #1d4ed8);
+    color: #ffffff !important;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.7rem 1.8rem;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4), 0 0 0 0px rgba(59, 130, 246, 0.7);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: btnGlowPulse 2.5s infinite;
+}
+
+.welcome-load-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.welcome-load-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+@keyframes btnGlowPulse {
+    0% {
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4), 0 0 0 0px rgba(59, 130, 246, 0.5);
+    }
+    70% {
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4), 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4), 0 0 0 0px rgba(59, 130, 246, 0);
+    }
+}
+
 

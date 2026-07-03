@@ -16,6 +16,12 @@ if (fileInput) {
         if (this.files && this.files.length > 0) {
             currentFileName = this.files[0].name;
             document.getElementById('fileName').textContent = currentFileName;
+            
+            // Procesar el archivo automáticamente al seleccionarlo
+            const uploadForm = document.getElementById('uploadForm');
+            if (uploadForm) {
+                uploadForm.requestSubmit();
+            }
         }
     });
 }
@@ -103,12 +109,12 @@ let globalCoeffs = { gg: 13, bi: 6, baja: 0 };
 let navigationStack = []; // Stack of { code, title } objects
 let currentLevel = null; // null = root level, or code of current parent
 
-// Column resizing state and defaults (Code, Unit, Qty, Price, Amount)
-window.columnWidths = [190, 45, 80, 100, 110];
+// Column resizing state and defaults (Code, Unit, Qty, Price, Proportion, Amount)
+window.columnWidths = [190, 45, 80, 100, 180, 110];
 
 // Calcular anchos óptimos para cada columna basándose en el contenido real
 function calculateOptimalColumnWidths(data) {
-    if (!data) return [190, 45, 80, 100, 110];
+    if (!data) return [190, 45, 80, 100, 180, 110];
     
     // 1. Calcular profundidades de todos los conceptos para tabular el Código correctamente
     const depths = {};
@@ -166,7 +172,7 @@ function calculateOptimalColumnWidths(data) {
     maxPriceWidth = Math.min(160, Math.max(100, Math.ceil(maxPriceWidth)));
     maxAmountWidth = Math.min(180, Math.max(110, Math.ceil(maxAmountWidth)));
 
-    return [maxCodeWidth, maxUnitWidth, maxQtyWidth, maxPriceWidth, maxAmountWidth];
+    return [maxCodeWidth, maxUnitWidth, maxQtyWidth, maxPriceWidth, 180, maxAmountWidth];
 }
 
 /**
@@ -496,6 +502,8 @@ function renderCurrentLevel() {
     colHQty.textContent = 'Cantidad';
     const colHPrice = document.createElement('div');
     colHPrice.textContent = 'Precio';
+    const colHProportion = document.createElement('div');
+    colHProportion.textContent = 'Proporción';
     const colHAmount = document.createElement('div');
     colHAmount.textContent = 'Importe';
 
@@ -504,6 +512,7 @@ function renderCurrentLevel() {
     header.appendChild(colHSummary);
     header.appendChild(colHQty);
     header.appendChild(colHPrice);
+    header.appendChild(colHProportion);
     header.appendChild(colHAmount);
     
     treeContainer.appendChild(header);
@@ -569,10 +578,10 @@ function renderCurrentLevel() {
 
 // Update grid template for all rows
 function updateGridTemplate() {
-    if (!window.columnWidths || window.columnWidths.length < 5) return;
+    if (!window.columnWidths || window.columnWidths.length < 6) return;
     
     const w = window.columnWidths;
-    const template = `${w[0]}px ${w[1]}px 1fr ${w[2]}px ${w[3]}px ${w[4]}px`;
+    const template = `${w[0]}px ${w[1]}px 1fr ${w[2]}px ${w[3]}px ${w[4]}px ${w[5]}px`;
 
     // Update header
     const header = document.getElementById('treeHeader');
@@ -581,13 +590,14 @@ function updateGridTemplate() {
         
         // Update individual header column widths (excluding summary 1fr)
         const cols = header.children;
-        if (cols.length >= 6) {
+        if (cols.length >= 7) {
             cols[0].style.width = w[0] + 'px';
             cols[1].style.width = w[1] + 'px';
             // cols[2] is Resumen (1fr), we don't set a fixed width on it
             cols[3].style.width = w[2] + 'px';
             cols[4].style.width = w[3] + 'px';
             cols[5].style.width = w[4] + 'px';
+            cols[6].style.width = w[5] + 'px';
         }
     }
 
@@ -615,16 +625,12 @@ function renderApp(data) {
     currentLevel = null;
 
     // Show control containers and buttons
-    const dashboardContainer = document.getElementById('dashboardContainer');
-    const vizContainer = document.getElementById('vizContainer');
-    const coeffsContainer = document.getElementById('coeffsContainer');
-    const compareContainer = document.getElementById('compareContainer');
-    const exportContainer = document.getElementById('exportContainer');
-    if (dashboardContainer) dashboardContainer.style.display = 'flex';
-    if (vizContainer) vizContainer.style.display = 'flex';
-    if (coeffsContainer) coeffsContainer.style.display = 'flex';
-    if (compareContainer) compareContainer.style.display = 'flex';
-    if (exportContainer) exportContainer.style.display = 'flex';
+    const viewsGroup = document.getElementById('viewsGroup');
+    const toolsGroup = document.getElementById('toolsGroup');
+    const exportGroup = document.getElementById('exportGroup');
+    if (viewsGroup) viewsGroup.style.display = 'flex';
+    if (toolsGroup) toolsGroup.style.display = 'flex';
+    if (exportGroup) exportGroup.style.display = 'flex';
 
     const sBtn = document.getElementById('saveBtn');
     if (sBtn) sBtn.style.display = 'inline-block';
@@ -637,7 +643,7 @@ function renderApp(data) {
     const totalPecDisplay = document.getElementById('budgetTotalPEC');
     if (totalPecDisplay) totalPecDisplay.style.display = 'none';
     const toggleCoeffs = document.getElementById('toggleCoeffsBtn');
-    if (toggleCoeffs) toggleCoeffs.style.display = 'inline-block';
+    if (toggleCoeffs) toggleCoeffs.style.display = 'flex';
     const coeffsPanel = document.getElementById('coeffsPanel');
     if (coeffsPanel) coeffsPanel.style.display = 'none';
 
@@ -652,7 +658,7 @@ function renderApp(data) {
 
     // Mostrar botón de auditoría
     const auditBtn = document.getElementById('auditLogBtn');
-    if (auditBtn) auditBtn.style.display = 'inline-block';
+    if (auditBtn) auditBtn.style.display = 'flex';
 
     // Cargar certificaciones de localStorage
     const currentFileName = data.properties.description || 'default';
@@ -725,7 +731,7 @@ function renderApp(data) {
             stats.textContent = `Cargado: ${conceptCount} partidas | Raíces: ${rootCount}`;
         }
 
-        info.style.display = 'block';
+        info.style.display = 'flex';
     }
 
     // Hide empty state
@@ -1033,99 +1039,142 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     // 5. Column: Quantity (Editable para partidas con factor en el padre)
     const colQty = document.createElement('div');
     colQty.className = 'col-quantity';
-    colQty.textContent = isNaN(qtyVal) ? '' : qtyVal.toLocaleString('es-ES', { minimumFractionDigits: 3 });
-
-    // Solo hacer editable si no es raíz y tiene un factor (qty) válido
-    const isEditableQty = !isRoot && !isNaN(qtyVal);
-    if (isEditableQty) {
-        setupExplicitEdit(colQty, (newQtyText) => {
-            const rawText = newQtyText.trim().replace(',', '.');
-            const newVal = parseFloat(rawText);
-            if (!isNaN(newVal) && newVal >= 0) {
-                const oldVal = qtyVal;
-                if (oldVal !== newVal) {
-                    // Buscar el factor en la descomposición del padre y actualizarlo
-                    let updated = false;
-                    Object.values(parsedData.concepts).forEach(parentConcept => {
-                        if (!Array.isArray(parentConcept.decomposition)) return;
-                        parentConcept.decomposition.forEach(item => {
-                            if (item.code === code && !updated) {
-                                logChange(
-                                    concept.code.replace(/#+\s*$/, ''),
-                                    `Cambio de cantidad: ${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })} → ${newVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })} ${concept.unit || ''}`,
-                                    `${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })}`,
-                                    `${newVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })}`,
-                                    () => {
-                                        item.factor = newVal;
-                                        // Actualizar cantidad del concepto si tiene mediciones
-                                        concept.quantity = newVal;
-                                        // Marcar padre para recálculo
-                                        parentConcept.isManualPrice = false;
-                                    }
-                                );
-                                updated = true;
-                            }
+    
+    if (isChapter) {
+        colQty.textContent = '';
+    } else {
+        colQty.textContent = isNaN(qtyVal) ? '' : qtyVal.toLocaleString('es-ES', { minimumFractionDigits: 3 });
+        
+        // Solo hacer editable si no es raíz, no es capítulo y tiene un factor (qty) válido
+        const isEditableQty = !isRoot && !isChapter && !isNaN(qtyVal);
+        if (isEditableQty) {
+            setupExplicitEdit(colQty, (newQtyText) => {
+                const rawText = newQtyText.trim().replace(',', '.');
+                const newVal = parseFloat(rawText);
+                if (!isNaN(newVal) && newVal >= 0) {
+                    const oldVal = qtyVal;
+                    if (oldVal !== newVal) {
+                        // Buscar el factor en la descomposición del padre y actualizarlo
+                        let updated = false;
+                        Object.values(parsedData.concepts).forEach(parentConcept => {
+                            if (!Array.isArray(parentConcept.decomposition)) return;
+                            parentConcept.decomposition.forEach(item => {
+                                if (item.code === code && !updated) {
+                                    logChange(
+                                        concept.code.replace(/#+\s*$/, ''),
+                                        `Cambio de cantidad: ${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })} → ${newVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })} ${concept.unit || ''}`,
+                                        `${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })}`,
+                                        `${newVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })}`,
+                                        () => {
+                                            item.factor = newVal;
+                                            // Actualizar cantidad del concepto si tiene mediciones
+                                            concept.quantity = newVal;
+                                            // Marcar padre para recálculo
+                                            parentConcept.isManualPrice = false;
+                                        }
+                                    );
+                                    updated = true;
+                                }
+                            });
                         });
-                    });
-                    // Actualizar el importe mostrado en esta misma fila
-                    const newAmount = newVal * (parseFloat(concept.price) || 0);
-                    const amountEl = row.querySelector('.col-amount');
-                    if (amountEl) {
-                        amountEl.textContent = newAmount === 0 ? '' : newAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+                        // Actualizar el importe mostrado en esta misma fila
+                        const newAmount = newVal * (parseFloat(concept.price) || 0);
+                        const amountEl = row.querySelector('.col-amount');
+                        if (amountEl) {
+                            amountEl.textContent = newAmount === 0 ? '' : newAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+                        }
+                        return true;
                     }
-                    return true;
                 }
-            }
-            // Revertir si valor inválido
-            colQty.querySelector('.editable-val') && (colQty.querySelector('.editable-val').textContent =
-                isNaN(qtyVal) ? '' : qtyVal.toLocaleString('es-ES', { minimumFractionDigits: 3 }));
-            return false;
-        }, { isNumeric: true });
-    }
-
-    // 6. Column: Price (Editable solo para partidas, no capítulos/raíces)
-    const colPrice = document.createElement('div');
-    colPrice.className = 'col-price';
-    colPrice.textContent = isNaN(priceVal) ? '' : priceVal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
-
-    // Agregar desviación si el comparador está activo
-    if (compareActive && compareData && compareData[code]) {
-        const compConcept = compareData[code];
-        const mainPrice = parseFloat(concept.price) || 0;
-        const compPrice = parseFloat(compConcept.price) || 0;
-        if (mainPrice !== compPrice) {
-            const diffPrice = mainPrice - compPrice;
-            const pct = compPrice === 0 ? 0 : (diffPrice / compPrice) * 100;
-            const badge = document.createElement('span');
-            badge.className = 'dev-badge ' + (diffPrice >= 0 ? 'dev-up' : 'dev-down');
-            badge.textContent = `${diffPrice >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
-            colPrice.appendChild(badge);
+                // Revertir si valor inválido
+                colQty.querySelector('.editable-val') && (colQty.querySelector('.editable-val').textContent =
+                    isNaN(qtyVal) ? '' : qtyVal.toLocaleString('es-ES', { minimumFractionDigits: 3 }));
+                return false;
+            }, { isNumeric: true });
         }
     }
+
+    // 6. Column: Price (Editable solo para partidas)
+    const colPrice = document.createElement('div');
+    colPrice.className = 'col-price';
     
-    const isEditablePrice = !concept.code.endsWith('#');
-    if (isEditablePrice) {
-        setupExplicitEdit(colPrice, (newPriceText) => {
-            const rawText = newPriceText.trim().replace(',', '.');
-            const newVal = parseFloat(rawText);
-            if (!isNaN(newVal) && newVal >= 0) {
-                const oldVal = parseFloat(concept.price) || 0;
-                if (oldVal !== newVal) {
-                    logChange(concept.code.replace(/#+\s*$/, ''), `Cambio de precio unitario: ${newVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, `${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, `${newVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, () => {
-                        concept.price = newVal;
-                        concept.isManualPrice = true; // Bloquear precio manual
-                    });
-                    return true;
-                }
-            }
-            const prevPrice = parseFloat(concept.price) || 0;
-            colPrice.textContent = prevPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 });
-            return false;
-        }, {
-            isNumeric: true
-        });
+    if (isChapter) {
+        colPrice.textContent = '';
     } else {
-        colPrice.contentEditable = "false";
+        colPrice.textContent = isNaN(priceVal) ? '' : priceVal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+        // Agregar desviación si el comparador está activo
+        if (compareActive && compareData && compareData[code]) {
+            const compConcept = compareData[code];
+            const mainPrice = parseFloat(concept.price) || 0;
+            const compPrice = parseFloat(compConcept.price) || 0;
+            if (mainPrice !== compPrice) {
+                const diffPrice = mainPrice - compPrice;
+                const pct = compPrice === 0 ? 0 : (diffPrice / compPrice) * 100;
+                const badge = document.createElement('span');
+                badge.className = 'dev-badge ' + (diffPrice >= 0 ? 'dev-up' : 'dev-down');
+                badge.textContent = `${diffPrice >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
+                colPrice.appendChild(badge);
+            }
+        }
+        
+        const isEditablePrice = !isChapter;
+        if (isEditablePrice) {
+            setupExplicitEdit(colPrice, (newPriceText) => {
+                const rawText = newPriceText.trim().replace(',', '.');
+                const newVal = parseFloat(rawText);
+                if (!isNaN(newVal) && newVal >= 0) {
+                    const oldVal = parseFloat(concept.price) || 0;
+                    if (oldVal !== newVal) {
+                        logChange(concept.code.replace(/#+\s*$/, ''), `Cambio de precio unitario: ${newVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, `${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, `${newVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, () => {
+                            concept.price = newVal;
+                            concept.isManualPrice = true; // Bloquear precio manual
+                        });
+                        return true;
+                    }
+                }
+                const prevPrice = parseFloat(concept.price) || 0;
+                colPrice.textContent = prevPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+                return false;
+            }, {
+                isNumeric: true
+            });
+        } else {
+            colPrice.contentEditable = "false";
+        }
+    }
+
+    // 6.5. Column: Proportion (% PEM and resource composition color bar)
+    const colProportion = document.createElement('div');
+    colProportion.className = 'col-proportion';
+    if (isChapter) {
+        const totalPEM = window.currentTotalPEM || calculateTotalBudget() || 1.0;
+        const pctPEM = ((parseFloat(concept.price) || 0) / totalPEM) * 100;
+        
+        const res = accumulateChapterResources(code);
+        const sumRes = res.mo + res.mat + res.maq + res.sub + res.etc;
+        const pMO  = sumRes === 0 ? 0 : (res.mo / sumRes) * 100;
+        const pMAT = sumRes === 0 ? 0 : (res.mat / sumRes) * 100;
+        const pMAQ = sumRes === 0 ? 0 : (res.maq / sumRes) * 100;
+        const pSUB = sumRes === 0 ? 0 : (res.sub / sumRes) * 100;
+        const pETC = sumRes === 0 ? 0 : (res.etc / sumRes) * 100;
+        
+        colProportion.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; width:100%;">
+                <span class="pct-pem-badge" style="font-weight:600; font-size:0.75rem; color:var(--text-secondary); min-width:42px; display:inline-block; text-align:right;">${pctPEM.toFixed(1)}%</span>
+                <div class="resource-bar-container" style="height: 10px; border-radius: 4px; overflow: hidden; background: var(--border-color); display: flex; flex-grow: 1; min-width: 60px; max-width: 110px; margin: auto 0;">
+                    <div class="resource-bar-segment rb-mo" style="width: ${pMO.toFixed(1)}%" title="Mano de obra: ${pMO.toFixed(1)}% (${Math.round(res.mo).toLocaleString('es-ES')} €)"></div>
+                    <div class="resource-bar-segment rb-mat" style="width: ${pMAT.toFixed(1)}%" title="Materiales: ${pMAT.toFixed(1)}% (${Math.round(res.mat).toLocaleString('es-ES')} €)"></div>
+                    <div class="resource-bar-segment rb-maq" style="width: ${pMAQ.toFixed(1)}%" title="Maquinaria: ${pMAQ.toFixed(1)}% (${Math.round(res.maq).toLocaleString('es-ES')} €)"></div>
+                    <div class="resource-bar-segment rb-sub" style="width: ${pSUB.toFixed(1)}%" title="Subcontratas: ${pSUB.toFixed(1)}% (${Math.round(res.sub).toLocaleString('es-ES')} €)"></div>
+                    <div class="resource-bar-segment rb-etc" style="width: ${pETC.toFixed(1)}%" title="Resto: ${pETC.toFixed(1)}% (${Math.round(res.etc).toLocaleString('es-ES')} €)"></div>
+                </div>
+            </div>
+        `;
+        colProportion.style.display = 'flex';
+        colProportion.style.alignItems = 'center';
+    } else {
+        colProportion.textContent = '';
     }
 
     // 7. Column: Amount (Importe)
@@ -1135,12 +1184,12 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
 
 
     // Append columns
-    // No colHier anymore
     row.appendChild(colCode);
     row.appendChild(colUnit);
     row.appendChild(colSummary);
     row.appendChild(colQty);
     row.appendChild(colPrice);
+    row.appendChild(colProportion);
     row.appendChild(colAmount);
 
     // Add mobile navigation indicator
@@ -1633,6 +1682,7 @@ function recalculateAll() {
     roots.forEach(rootCode => {
         recalculateConceptPrice(rootCode, visited);
     });
+    window.currentTotalPEM = calculateTotalBudget();
 }
 
 function calculateTotalBudget() {
@@ -1648,6 +1698,23 @@ function calculateTotalBudget() {
     return total;
 }
 
+function calculateTotalCertifiedAmount() {
+    let total = 0;
+    if (!parsedData || !parsedData.concepts) return 0;
+    for (const code in parsedData.concepts) {
+        const concept = parsedData.concepts[code];
+        const conceptCerts = window.certifications[code];
+        if (conceptCerts && concept.price) {
+            let conceptQty = 0;
+            for (const month in conceptCerts) {
+                conceptQty += parseFloat(conceptCerts[month]) || 0;
+            }
+            total += conceptQty * (parseFloat(concept.price) || 0);
+        }
+    }
+    return total;
+}
+
 function updateTotalBudgetDisplay() {
     const totalEl = document.getElementById('budgetTotal');
     const totalPecEl = document.getElementById('budgetTotalPEC');
@@ -1655,12 +1722,13 @@ function updateTotalBudgetDisplay() {
     
     if (totalEl) {
         const pem = calculateTotalBudget();
+        window.currentTotalPEM = pem;
         
         // Actualizar PEM
         totalEl.innerHTML = `<span class="lbl">PEM</span><span class="val">${pem.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>`;
         
         // Mostrar botón de coeficientes
-        if (toggleCoeffsBtn) toggleCoeffsBtn.style.display = 'inline-block';
+        if (toggleCoeffsBtn) toggleCoeffsBtn.style.display = 'flex';
         
         // Calcular PEC
         const gg = globalCoeffs.gg / 100;
@@ -2026,19 +2094,25 @@ function exportToPdf() {
 // Modo Oscuro
 const themeToggleBtn = document.getElementById('themeToggle');
 if (themeToggleBtn) {
-    if (localStorage.getItem('theme') === 'dark' || 
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    const iconEl = document.getElementById('themeToggleIcon');
+    const isDarkStored = localStorage.getItem('theme') === 'dark' || 
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        
+    if (isDarkStored) {
         document.body.classList.add('dark-theme');
-        themeToggleBtn.textContent = '☀️';
+        if (iconEl) iconEl.textContent = '☀️';
     } else {
         document.body.classList.remove('dark-theme');
-        themeToggleBtn.textContent = '🌙';
+        if (iconEl) iconEl.textContent = '🌙';
     }
 
     themeToggleBtn.addEventListener('click', () => {
         const isDark = document.body.classList.toggle('dark-theme');
-        themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
+        if (iconEl) iconEl.textContent = isDark ? '☀️' : '🌙';
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
+        const setDrop = document.getElementById('settingsDropdown');
+        if (setDrop) setDrop.classList.remove('show');
     });
 }
 
@@ -2722,7 +2796,7 @@ function hasVisibleChildren(code) {
     return children.some(child => hasVisibleChildren(child.code));
 }
 
-// 7. Enlazar Eventos de Nuevas Funcionalidades (Dropdown de Exportación)
+// 7. Enlazar Eventos de Nuevas Funcionalidades (Dropdown de Exportación y Ajustes)
 const exportDropdown = document.getElementById('exportDropdown');
 if (exportDropdown) {
     const toggleBtn = exportDropdown.querySelector('.dropdown-toggle');
@@ -2734,11 +2808,24 @@ if (exportDropdown) {
     }
 }
 
-// Cerrar dropdown al hacer click fuera
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsDropdown = document.getElementById('settingsDropdown');
+if (settingsBtn && settingsDropdown) {
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsDropdown.classList.toggle('show');
+    });
+}
+
+// Cerrar dropdowns al hacer click fuera
 window.addEventListener('click', (e) => {
     const expDrop = document.getElementById('exportDropdown');
     if (expDrop && !expDrop.contains(e.target)) {
         expDrop.classList.remove('show');
+    }
+    const setDrop = document.getElementById('settingsDropdown');
+    if (setDrop && !setDrop.contains(e.target)) {
+        setDrop.classList.remove('show');
     }
 });
 
@@ -2758,6 +2845,15 @@ if (exportExcelBtn) {
         const expDrop = document.getElementById('exportDropdown');
         if (expDrop) expDrop.classList.remove('show');
         exportToExcel();
+    });
+}
+
+const exportBc3Btn = document.getElementById('exportBc3Btn');
+if (exportBc3Btn) {
+    exportBc3Btn.addEventListener('click', () => {
+        const expDrop = document.getElementById('exportDropdown');
+        if (expDrop) expDrop.classList.remove('show');
+        exportToBC3();
     });
 }
 
@@ -2815,6 +2911,8 @@ const closeInfoBtn = document.getElementById('closeInfoBtn');
 if (infoBtn && infoModal && closeInfoBtn) {
     infoBtn.addEventListener('click', () => {
         infoModal.style.display = 'flex';
+        const setDrop = document.getElementById('settingsDropdown');
+        if (setDrop) setDrop.classList.remove('show');
     });
 
     closeInfoBtn.addEventListener('click', () => {
@@ -2929,6 +3027,8 @@ if (toggleCoeffsBtn && coeffsPanel) {
         } else {
             coeffsPanel.style.display = 'none';
         }
+        const setDrop = document.getElementById('settingsDropdown');
+        if (setDrop) setDrop.classList.remove('show');
     });
 }
 
@@ -3573,18 +3673,59 @@ function rebuildGanttDOM() {
         const globalProg = totalPrice > 0 ? ((executedPrice / totalPrice) * 100).toFixed(1) : '0.0';
         const totalDays = totalWeeks * 7;
         
+        const executedCertified = calculateTotalCertifiedAmount();
+        const remainingAmount = Math.max(0, totalPrice - executedCertified);
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const startD = new Date(ganttStartDate);
+        startD.setHours(0,0,0,0);
+        const endD = new Date(startD);
+        endD.setDate(startD.getDate() + totalDays);
+        
+        let daysLeft = 0;
+        if (today < startD) {
+            daysLeft = totalDays;
+        } else if (today > endD) {
+            daysLeft = 0;
+        } else {
+            const diffTime = endD - today;
+            daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        let mediaDay = 0;
+        let mediaWeek = 0;
+        let mediaMonth = 0;
+        if (daysLeft > 0) {
+            mediaDay = remainingAmount / daysLeft;
+            mediaWeek = mediaDay * 7;
+            mediaMonth = mediaDay * 30.417;
+        }
+        
         summaryBar.innerHTML = `
-            <div class="gantt-kpi-card">
-                <span class="gantt-kpi-label">Capítulos</span>
-                <span class="gantt-kpi-val">${totalChapters}</span>
+            <div class="gantt-kpi-group">
+                <h4>⏱️ Cronograma y Plazos</h4>
+                <div class="gantt-kpi-row">
+                    <div class="gantt-sub-kpi"><span>Plazo Total:</span> <strong>${totalWeeks} semanas (${totalDays} días)</strong></div>
+                    <div class="gantt-sub-kpi"><span>Días Restantes:</span> <strong style="color: ${daysLeft > 0 ? '#eab308' : '#10b981'};">${daysLeft} días</strong></div>
+                    <div class="gantt-sub-kpi"><span>Avance Real:</span> <strong style="color: #10b981;">${globalProg}%</strong></div>
+                </div>
             </div>
-            <div class="gantt-kpi-card">
-                <span class="gantt-kpi-label">Plazo Total</span>
-                <span class="gantt-kpi-val">${totalWeeks} semanas <small style="font-size:0.7em; color:var(--text-secondary);">(${totalDays} días)</small></span>
+            <div class="gantt-kpi-group">
+                <h4>💰 Estado Económico (PEM)</h4>
+                <div class="gantt-kpi-row">
+                    <div class="gantt-sub-kpi"><span>Presupuesto Total:</span> <strong>${totalPrice.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</strong></div>
+                    <div class="gantt-sub-kpi"><span>Certificado:</span> <strong style="color: #10b981;">${executedCertified.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</strong></div>
+                    <div class="gantt-sub-kpi"><span>Restante:</span> <strong style="color: #3b82f6;">${remainingAmount.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</strong></div>
+                </div>
             </div>
-            <div class="gantt-kpi-card">
-                <span class="gantt-kpi-label">Avance Global</span>
-                <span class="gantt-kpi-val" style="color: #10b981;">${globalProg}%</span>
+            <div class="gantt-kpi-group">
+                <h4>📊 Media de Ejecución Requerida</h4>
+                <div class="gantt-kpi-row">
+                    <div class="gantt-sub-kpi"><span>Por Día:</span> <strong>${mediaDay.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</strong></div>
+                    <div class="gantt-sub-kpi"><span>Por Semana:</span> <strong>${mediaWeek.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</strong></div>
+                    <div class="gantt-sub-kpi"><span>Por Mes:</span> <strong>${mediaMonth.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</strong></div>
+                </div>
             </div>
         `;
     }
@@ -5646,11 +5787,11 @@ function createDraftNodeRow(depth) {
     row.style.alignItems = 'center';
     row.style.minHeight = '38px';
     
-    if (window.columnWidths && window.columnWidths.length >= 5) {
+    if (window.columnWidths && window.columnWidths.length >= 6) {
         const w = window.columnWidths;
-        row.style.gridTemplateColumns = `${w[0]}px ${w[1]}px 1fr ${w[2]}px ${w[3]}px ${w[4]}px`;
+        row.style.gridTemplateColumns = `${w[0]}px ${w[1]}px 1fr ${w[2]}px ${w[3]}px ${w[4]}px ${w[5]}px`;
     } else {
-        row.style.gridTemplateColumns = '160px 50px 1fr 100px 100px 120px';
+        row.style.gridTemplateColumns = '190px 45px 1fr 80px 100px 180px 110px';
     }
 
     // 1. Column: Code (contains arrows and OK checkmark)
@@ -5798,11 +5939,15 @@ function createDraftNodeRow(depth) {
         colAmount.textContent = '0,00 €';
     }
 
+    const colProportion = document.createElement('div');
+    colProportion.className = 'col-proportion';
+
     row.appendChild(colCode);
     row.appendChild(colUnit);
     row.appendChild(colSummary);
     row.appendChild(colQty);
     row.appendChild(colPrice);
+    row.appendChild(colProportion);
     row.appendChild(colAmount);
 
     function updateDraftImporte() {
@@ -6143,6 +6288,8 @@ if (auditLogBtn && auditModal) {
     auditLogBtn.onclick = () => {
         updateAuditLogModal();
         auditModal.style.display = 'flex';
+        const setDrop = document.getElementById('settingsDropdown');
+        if (setDrop) setDrop.classList.remove('show');
     };
 }
 if (closeAuditBtn) closeAuditBtn.onclick = () => { auditModal.style.display = 'none'; };
@@ -6839,3 +6986,266 @@ function deleteCertObrasRow(code) {
         renderCertObrasModal();
     }
 }
+
+// ── Exportar a FIEBDC-3 (.bc3) con cambios aplicados ──
+function exportToBC3() {
+    if (!parsedData) return;
+
+    let out = [];
+
+    // 1. Cabecera V
+    const owner = parsedData.properties.owner || "BC3 Viewer Premium";
+    const format = parsedData.properties.format || "FIEBDC-3/2004";
+    const generator = parsedData.properties.generator || "BC3 Viewer Premium";
+    const desc = parsedData.properties.description || "";
+    const charset = parsedData.properties.charset || "ANSI";
+    out.push(`~V|${owner}|${format}|${generator}|${desc}|${charset}|`);
+
+    // 2. Coeficientes / Divisa
+    out.push(`~K|\\2\\2\\2\\2\\2\\2\\2\\EUR\\||`);
+
+    // 3. Conceptos (~C)
+    // Usamos el estándar oficial ~C para garantizar compatibilidad con programas de mediciones
+    Object.values(parsedData.concepts).forEach(c => {
+        if (!c.code) return;
+        const code = c.code;
+        const unit = c.unit || "";
+        const summary = c.summary || "";
+        const price = (parseFloat(c.price) || 0).toString().replace('.', ',');
+        const date = c.date || "010126";
+        const type = c.type !== undefined ? c.type : 0;
+        out.push(`~C|${code}|${unit}|${summary}|${price}|${date}|${type}|`);
+    });
+
+    // 4. Descomposiciones (~D)
+    Object.values(parsedData.concepts).forEach(c => {
+        if (c.decomposition && c.decomposition.length > 0) {
+            let decompParts = [];
+            c.decomposition.forEach(item => {
+                const factorStr = (parseFloat(item.factor) || 1.0).toString().replace('.', ',');
+                const typeVal = item.type !== undefined ? item.type : 0;
+                decompParts.push(`${item.code}\\${factorStr}\\${typeVal}`);
+            });
+            out.push(`~D|${c.code}|${decompParts.join('\\')}|`);
+        }
+    });
+
+    // 5. Descripciones / Textos (~T)
+    Object.values(parsedData.concepts).forEach(c => {
+        if (c.description) {
+            out.push(`~T|${c.code}|${c.description}|`);
+        }
+    });
+
+    // Unir con saltos de línea estándar de Windows CRLF
+    const text = out.join("\r\n");
+
+    const baseName = currentFileName.replace(/\.[^/.]+$/, "") + "_modificado.bc3";
+    const blob = new Blob([text], { type: 'text/plain;charset=ansi' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = baseName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// ── Lógica del Panel de Capítulos ──
+function getChaptersList() {
+    if (!parsedData) return [];
+    const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+    let chapters = [];
+    
+    if (roots.length > 1) {
+        roots.forEach(code => {
+            const concept = parsedData.concepts[code];
+            if (concept) chapters.push({ concept, factor: 1.0 });
+        });
+    } else if (roots.length === 1) {
+        const root = parsedData.concepts[roots[0]];
+        if (root) {
+            const children = getConceptDecomposition(root);
+            if (children && children.length > 0) {
+                children.forEach(ch => {
+                    const concept = parsedData.concepts[ch.code];
+                    if (concept) chapters.push({ concept, factor: parseFloat(ch.factor) || 1.0 });
+                });
+            } else {
+                chapters.push({ concept: root, factor: 1.0 });
+            }
+        }
+    }
+    return chapters;
+}
+
+function accumulateChapterResources(conceptCode) {
+    let mo = 0, maq = 0, mat = 0, sub = 0, etc = 0, total = 0;
+    
+    function traverse(code, qty) {
+        const concept = parsedData.concepts[code];
+        if (!concept) return;
+        
+        const isChapter = concept.code.endsWith('#') || concept.is_root;
+        const kids = getConceptDecomposition(concept);
+        
+        if (isChapter && kids.length > 0) {
+            kids.forEach(child => {
+                traverse(child.code, qty * (parseFloat(child.factor) || 1.0));
+            });
+        } else {
+            const price = parseFloat(concept.price) || 0;
+            const cost = price * qty;
+            
+            if (concept.decomposition && concept.decomposition.length > 0) {
+                concept.decomposition.forEach(item => {
+                    const childConcept = parsedData.concepts[item.code];
+                    const childPrice = childConcept ? (parseFloat(childConcept.price) || 0) : 0;
+                    const itemFactor = parseFloat(item.factor) || 0;
+                    const resourceCost = itemFactor * childPrice * qty;
+                    
+                    const itemType = item.type; // 1=MO, 2=MAQ, 3=MAT, 4=SUB
+                    if (itemType === 1) mo += resourceCost;
+                    else if (itemType === 2) maq += resourceCost;
+                    else if (itemType === 3) mat += resourceCost;
+                    else if (itemType === 4) sub += resourceCost;
+                    else etc += resourceCost;
+                });
+            } else {
+                sub += cost;
+            }
+        }
+    }
+    
+    traverse(conceptCode, 1.0);
+    total = mo + maq + mat + sub + etc;
+    return { mo, maq, mat, sub, etc, total };
+}
+
+
+
+// ── Exportar Certificación Mensual a PDF ──
+function exportCertPDF() {
+    const monthSelect = document.getElementById('certObrasMonthPdfSelect');
+    const selectedMonth = monthSelect ? monthSelect.value : 'all';
+    
+    const printArea = document.getElementById('certPrintArea');
+    if (!printArea) return;
+    
+    const projectTitle = document.getElementById('projectTitle')?.textContent || 'Proyecto';
+    const currentDate = new Date().toLocaleDateString('es-ES');
+    
+    const certs = window.certifications || {};
+    const certCodes = Object.keys(certs);
+    
+    let html = `
+        <div class="cert-print-header">
+            <h1 class="cert-print-title">CERTIFICACIÓN DE OBRA</h1>
+            <div class="cert-print-meta">
+                <strong>Proyecto:</strong> ${projectTitle}<br>
+                <strong>Fecha de Emisión:</strong> ${currentDate}<br>
+                <strong>Periodo:</strong> ${selectedMonth === 'all' ? 'Acumulado Total' : selectedMonth}
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:100px;">Código</th>
+                    <th>Partida / Unidad de Obra</th>
+                    <th style="width:40px; text-align:center;">Ud</th>
+                    <th style="width:80px; text-align:right;">P.U. (€)</th>
+                    <th style="width:90px; text-align:right;">Cant. Presup.</th>
+                    <th style="width:90px; text-align:right;">Cant. Certif.</th>
+                    <th style="width:60px; text-align:right;">% Avance</th>
+                    <th style="width:100px; text-align:right;">Imp. Certificado</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    let totalPresup = 0;
+    let totalCert = 0;
+    
+    certCodes.forEach(code => {
+        const concept = parsedData.concepts[code];
+        if (!concept) return;
+        
+        const conceptCerts = certs[code];
+        let qtyCert = 0;
+        
+        if (selectedMonth === 'all') {
+            Object.values(conceptCerts).forEach(val => {
+                qtyCert += parseFloat(val) || 0;
+            });
+        } else {
+            qtyCert = parseFloat(conceptCerts[selectedMonth]) || 0;
+        }
+        
+        if (qtyCert === 0) return;
+        
+        const totalQty = getConceptTotalQuantity(code);
+        const price = parseFloat(concept.price) || 0;
+        const pct = totalQty === 0 ? 0 : (qtyCert / totalQty) * 100;
+        const impCert = qtyCert * price;
+        const impPresup = totalQty * price;
+        
+        totalPresup += impPresup;
+        totalCert += impCert;
+        
+        html += `
+            <tr>
+                <td style="font-family:monospace; font-size:8pt;">${code.replace(/#+\s*$/, '')}</td>
+                <td>${concept.summary || ''}</td>
+                <td style="text-align:center;">${concept.unit || ''}</td>
+                <td style="text-align:right;">${price.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+                <td style="text-align:right;">${totalQty.toLocaleString('es-ES', { minimumFractionDigits: 3 })}</td>
+                <td style="text-align:right; font-weight:bold;">${qtyCert.toLocaleString('es-ES', { minimumFractionDigits: 3 })}</td>
+                <td style="text-align:right;">${pct.toFixed(1)}%</td>
+                <td style="text-align:right; font-weight:bold; color:#059669;">${impCert.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+            </tr>
+        `;
+    });
+    
+    if (totalCert === 0) {
+        html += `
+            <tr>
+                <td colspan="8" style="text-align:center; padding: 24px; font-style: italic; color: #64748b;">
+                    No hay certificaciones registradas para el periodo seleccionado.
+                </td>
+            </tr>
+        `;
+    }
+    
+    html += `
+            <tr class="cert-print-total-row">
+                <td colspan="4" style="text-align:right;">TOTALES</td>
+                <td style="text-align:right;">-</td>
+                <td style="text-align:right;">-</td>
+                <td style="text-align:right;">${totalPresup === 0 ? '0.0' : ((totalCert / totalPresup) * 100).toFixed(1)}%</td>
+                <td style="text-align:right;">${totalCert.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+            </tr>
+        </tbody>
+        </table>
+        
+        <div class="cert-print-footer">
+            <div>
+                <strong>EL CONTRATISTA</strong>
+                <div class="sign-box" style="margin-top:8px;">Firma y Sello</div>
+            </div>
+            <div>
+                <strong>LA DIRECCIÓN FACULTATIVA</strong>
+                <div class="sign-box" style="margin-top:8px;">Firma y Sello</div>
+            </div>
+        </div>
+    `;
+    
+    printArea.innerHTML = html;
+    window.print();
+}
+
+const exportCertPdfBtn = document.getElementById('exportCertPdfBtn');
+if (exportCertPdfBtn) {
+    exportCertPdfBtn.addEventListener('click', () => {
+        exportCertPDF();
+    });
+}
+
