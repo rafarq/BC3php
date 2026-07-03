@@ -96,8 +96,8 @@ let historyIndex = -1;
 let compareData = null;
 let compareActive = false;
 let globalCoeffs = { gg: 13, bi: 6, baja: 0 };
-let typeChartInstance = null;
-let chaptersChartInstance = null;
+// Chart instances are stored on the window object for proper destruction
+
 
 // Drill-down navigation state
 let navigationStack = []; // Stack of { code, title } objects
@@ -2372,7 +2372,7 @@ function renderCharts() {
     // 1. Doughnut - Distribución por tipo de coste
     const ctx1 = document.getElementById('resourceTypeChart');
     if (ctx1) {
-        typeChartInstance = new Chart(ctx1.getContext('2d'), {
+        window.typeChartInstance = new Chart(ctx1.getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['Mano de Obra', 'Maquinaria', 'Materiales', 'Subcontratas/Otros'],
@@ -2391,7 +2391,7 @@ function renderCharts() {
     // 2. Bar horizontal - Top capítulos por peso
     const ctx2 = document.getElementById('chaptersCostChart');
     if (ctx2) {
-        chaptersChartInstance = new Chart(ctx2.getContext('2d'), {
+        window.chaptersChartInstance = new Chart(ctx2.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: topLabels,
