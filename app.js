@@ -1,3 +1,50 @@
+const UI_ICONS = {
+    'bar-chart-3': '<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>',
+    'calendar-days': '<svg viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>',
+    'chevron-down': '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+    'chevron-right': '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+    'download': '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+    'file-spreadsheet': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M10 9H8"/></svg>',
+    'file-text': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+    'folder-up': '<svg viewBox="0 0 24 24"><path d="M12 10v6"/><path d="m9 13 3-3 3 3"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
+    'moon': '<svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z"/></svg>',
+    'redo-2': '<svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>',
+    'rotate-ccw': '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+    'settings': '<svg viewBox="0 0 24 24"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.3a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.3a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.2a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.3a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.3a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    'sun': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+    'undo-2': '<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>',
+    'x': '<svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'
+};
+
+function iconSvg(name, className = 'ui-icon') {
+    const svg = UI_ICONS[name] || '';
+    return svg ? `<span class="${className}" aria-hidden="true">${svg}</span>` : '';
+}
+
+function applyIcon(el) {
+    const icon = el.dataset.icon || el.dataset.iconOnly;
+    if (!icon) return;
+
+    const label = el.textContent.trim();
+    const trailingIcon = el.dataset.trailingIcon;
+
+    if (el.dataset.iconOnly) {
+        el.innerHTML = iconSvg(icon);
+        el.title = el.title || el.getAttribute('aria-label') || '';
+        return;
+    }
+
+    el.innerHTML = `${iconSvg(icon)}<span>${label}</span>${trailingIcon ? iconSvg(trailingIcon, 'ui-icon trailing-icon') : ''}`;
+}
+
+function setThemeIcon(isDark) {
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.innerHTML = iconSvg(isDark ? 'sun' : 'moon');
+}
+
+document.querySelectorAll('[data-icon], [data-icon-only]').forEach(applyIcon);
+
 // 1. File Input Change
 const fileInput = document.getElementById('bc3file');
 let currentFileName = "presupuesto.bc3";
@@ -48,6 +95,51 @@ window.addEventListener('resize', function () {
 
 // 3. Upload Form Submit
 const uploadForm = document.getElementById('uploadForm');
+async function processBc3File(file) {
+    if (!file || isProcessingFile) return;
+
+    if (!file.name.toLowerCase().endsWith('.bc3')) {
+        alert('Por favor, selecciona un archivo con extensión .bc3');
+        return;
+    }
+
+    isProcessingFile = true;
+
+    const formData = new FormData();
+    formData.append('bc3file', file);
+
+    const btn = uploadForm ? uploadForm.querySelector('.process-btn') : document.querySelector('.process-btn');
+    const originalText = btn ? btn.textContent : 'Procesar';
+    if (btn) {
+        btn.textContent = 'Procesando...';
+        btn.disabled = true;
+    }
+
+    try {
+        const response = await fetch('upload.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            renderApp(result.data);
+        } else {
+            alert('Error: ' + (result.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error procesando el archivo');
+    } finally {
+        if (btn) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+        isProcessingFile = false;
+    }
+}
+
 if (uploadForm) {
     uploadForm.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -58,35 +150,7 @@ if (uploadForm) {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('bc3file', fileInput.files[0]);
-
-        const btn = this.querySelector('.process-btn');
-        const originalText = btn.textContent;
-        btn.textContent = 'Procesando...';
-        btn.disabled = true;
-
-        try {
-            const response = await fetch('upload.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                renderApp(result.data);
-            } else {
-                alert('Error: ' + (result.error || 'Unknown error'));
-            }
-
-        } catch (err) {
-            console.error(err);
-            alert('Error procesando el archivo');
-        } finally {
-            btn.textContent = originalText;
-            btn.disabled = false;
-        }
+        processBc3File(fileInput.files[0]);
     });
 }
 
@@ -429,6 +493,7 @@ function renderCurrentLevel() {
     }
 
     const treeContainer = document.getElementById('treeContent');
+    if (!treeContainer) return;
     treeContainer.innerHTML = '';
 
     // Add mobile class if in mobile mode
@@ -565,7 +630,7 @@ function renderCurrentLevel() {
     treeContainer.appendChild(rootList);
 
     // Re-apply filter if exists
-    const searchTerm = document.getElementById('searchTerm').value.trim();
+    const searchTerm = (document.getElementById('searchTerm')?.value || '').trim();
     if (searchTerm) {
         filterTree(searchTerm);
     }
@@ -947,7 +1012,7 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
 
     const toggle = document.createElement('span');
     toggle.className = 'toggle-icon';
-    toggle.textContent = '▶';
+    toggle.innerHTML = iconSvg('chevron-right', 'ui-icon toggle-svg');
     // Hide if no children, but keep space? Or just opacity 0? 
     // User said "remove column", if simple node, maybe no triangle at all?
     // "ponerlos al lado del código".
@@ -1177,6 +1242,94 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
         colProportion.textContent = '';
     }
 
+    // Agregar desviación si el comparador está activo
+    if (compareActive && compareData && compareData[code]) {
+        const compConcept = compareData[code];
+        const mainPrice = parseFloat(concept.price) || 0;
+        const compPrice = parseFloat(compConcept.price) || 0;
+        if (mainPrice !== compPrice) {
+            const diffPrice = mainPrice - compPrice;
+            const pct = compPrice === 0 ? 0 : (diffPrice / compPrice) * 100;
+            const badge = document.createElement('span');
+            badge.className = 'dev-badge ' + (diffPrice >= 0 ? 'dev-up' : 'dev-down');
+            badge.textContent = `${diffPrice >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
+            colPrice.appendChild(badge);
+        }
+    }
+    
+    const isEditablePrice = !concept.code.endsWith('#');
+    if (isEditablePrice) {
+        colPrice.contentEditable = "true";
+        colPrice.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evitar expandir/contraer la fila al editar
+        });
+
+        colPrice.addEventListener('focus', () => {
+            // Mostrar número simple sin formatear para edición cómoda
+            const rawPrice = parseFloat(concept.price) || 0;
+            colPrice.textContent = rawPrice;
+            
+            // Seleccionar todo el texto
+            const range = document.createRange();
+            range.selectNodeContents(colPrice);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        colPrice.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Evitar salto de línea
+                
+                const valText = colPrice.textContent.trim().replace(',', '.');
+                const newVal = parseFloat(valText);
+
+                if (!isNaN(newVal) && newVal >= 0) {
+                    if (parseFloat(concept.price) !== newVal) {
+                        concept.price = newVal;
+                        concept.isManualPrice = true; // Bloquear precio manual
+                        recalculateAll();
+                        
+                        const scrollPos = document.getElementById('treeContent').scrollTop;
+                        renderCurrentLevel();
+                        document.getElementById('treeContent').scrollTop = scrollPos;
+                        
+                        updateTotalBudgetDisplay();
+                        saveHistoryState();
+                        return; // Retornar ya que re-renderiza y destruye el foco
+                    }
+                }
+                colPrice.blur();
+            }
+        });
+
+        colPrice.addEventListener('blur', () => {
+            const valText = colPrice.textContent.trim().replace(',', '.');
+            const newVal = parseFloat(valText);
+
+            if (!isNaN(newVal) && newVal >= 0) {
+                if (parseFloat(concept.price) !== newVal) {
+                    concept.price = newVal;
+                    concept.isManualPrice = true; // Bloquear precio manual
+                    recalculateAll();
+                    
+                    const scrollPos = document.getElementById('treeContent').scrollTop;
+                    renderCurrentLevel();
+                    document.getElementById('treeContent').scrollTop = scrollPos;
+                    
+                    updateTotalBudgetDisplay();
+                    saveHistoryState();
+                }
+            } else {
+                // Revertir al valor original si no es número válido
+                const prevPrice = parseFloat(concept.price) || 0;
+                colPrice.textContent = prevPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+            }
+        });
+    } else {
+        colPrice.contentEditable = "false";
+    }
+
     // 7. Column: Amount (Importe)
     const colAmount = document.createElement('div');
     colAmount.className = 'col-amount';
@@ -1241,6 +1394,7 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
                     toggle.classList.add('expanded');
                     expandedNodes.add(code); // Guardar estado
                 }
+                updateExpandAllButtonState();
             }
         }
     };
@@ -1549,6 +1703,19 @@ function showDetails(code) {
 
     // Description: Prefer ~T description, fallback to Summary
     updateEditableText(document.getElementById('detDescription'), (concept.description || concept.summary).replace(/\n/g, '<br>'), true);
+
+    // Mediciones en Panel de Escritorio
+    const msSection = document.getElementById('detMeasurementsSection');
+    const msDiv = document.getElementById('detMeasurements');
+    if (msSection && msDiv) {
+        if (concept.measurements && concept.measurements.length > 0) {
+            msSection.style.display = 'block';
+            msDiv.innerHTML = '';
+            msDiv.appendChild(createMeasurementTable(concept.measurements, concept));
+        } else {
+            msSection.style.display = 'none';
+        }
+    }
 
     // Mediciones en Panel de Escritorio
     const msSection = document.getElementById('detMeasurementsSection');
