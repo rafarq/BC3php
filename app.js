@@ -415,6 +415,13 @@ function navigateToLevel(parentCode, pushToStack = true) {
 function renderCurrentLevel() {
     if (!parsedData) return;
 
+    // Cache local del camino crítico para óptimo rendimiento
+    try {
+        window.currentCriticalPath = getCriticalPath();
+    } catch (e) {
+        window.currentCriticalPath = new Set();
+    }
+
     const treeContainer = document.getElementById('treeContent');
     treeContainer.innerHTML = '';
 
@@ -642,6 +649,41 @@ function renderApp(data) {
     if (biIn) biIn.value = 6;
     if (bajaIn) bajaIn.value = 0;
     globalCoeffs = { gg: 13, bi: 6, baja: 0 };
+
+    // Mostrar botón de auditoría
+    const auditBtn = document.getElementById('auditLogBtn');
+    if (auditBtn) auditBtn.style.display = 'inline-block';
+
+    // Cargar certificaciones de localStorage
+    const currentFileName = data.properties.description || 'default';
+    const certKey = `budget_certifications_${currentFileName.replace(/\s+/g, '_')}`;
+    try {
+        const storedCerts = localStorage.getItem(certKey);
+        window.certifications = storedCerts ? JSON.parse(storedCerts) : {};
+    } catch (e) {
+        window.certifications = {};
+    }
+
+    // Inicializar auditoría
+    window.auditLog = [];
+    updateAuditLogModal();
+
+    // Inicializar Gantt en segundo plano para que la ruta crítica esté lista
+    try {
+        ganttTasks = getGanttTasks();
+        const loaded = ganttLoad();
+        if (!loaded || Object.keys(ganttState).length === 0) {
+            ganttState = {};
+            initGanttStateAuto(ganttTasks, ganttTotalWeeks);
+            ganttSave();
+        } else {
+            recalculateParentTasks();
+            recalculateParentProgress();
+        }
+    } catch (e) {
+        console.warn("Gantt background init warning:", e);
+    }
+
 
     // Mostrar barra de filtros
     const filterBar = document.getElementById('filterBar');
@@ -873,6 +915,9 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     const isChapter = concept.code.endsWith('#') || hasChildren;
 
     row.className = 'tree-node-row';
+    if (window.currentCriticalPath && window.currentCriticalPath.has(code)) {
+        row.classList.add('tree-node-row--critical');
+    }
     if (window.columnWidths && window.columnWidths.length >= 5) {
         const w = window.columnWidths;
         row.style.gridTemplateColumns = `${w[0]}px ${w[1]}px 1fr ${w[2]}px ${w[3]}px ${w[4]}px`;
@@ -940,6 +985,14 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
         colCode.appendChild(badge);
     }
 
+    if (window.currentCriticalPath && window.currentCriticalPath.has(code)) {
+        const critBadge = document.createElement('span');
+        critBadge.className = 'badge-critical-tree';
+        critBadge.textContent = '⚡ CRÍTICO';
+        critBadge.title = 'Esta partida está en la Ruta Crítica de la obra';
+        colCode.appendChild(critBadge);
+    }
+
     // 2. Column: Unit
 
     // 3. Column: Unit
@@ -954,18 +1007,22 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     
     setupExplicitEdit(colSummary, (newSummary) => {
         if (newSummary && newSummary !== concept.summary) {
-            concept.summary = newSummary;
-            saveHistoryState();
-            
-            // Actualizar panel de detalles si coincide el código
-            const detCodeEl = document.getElementById('detCode');
-            const detSummaryEl = document.getElementById('detSummary');
-            if (detCodeEl && detSummaryEl && detCodeEl.textContent === concept.code.replace(/#+\s*$/, '')) {
-                const valEl = detSummaryEl.classList.contains('editable-val') ? detSummaryEl : detSummaryEl.querySelector('.editable-val');
-                if (valEl) valEl.textContent = newSummary;
-                else detSummaryEl.textContent = newSummary;
-            }
+            const oldVal = concept.summary;
+            logChange(concept.code.replace(/#+\s*$/, ''), `Cambio de resumen a: "${newSummary}"`, oldVal, newSummary, () => {
+                concept.summary = newSummary;
+                
+                // Actualizar panel de detalles si coincide el código
+                const detCodeEl = document.getElementById('detCode');
+                const detSummaryEl = document.getElementById('detSummary');
+                if (detCodeEl && detSummaryEl && detCodeEl.textContent === concept.code.replace(/#+\s*$/, '')) {
+                    const valEl = detSummaryEl.classList.contains('editable-val') ? detSummaryEl : detSummaryEl.querySelector('.editable-val');
+                    if (valEl) valEl.textContent = newSummary;
+                    else detSummaryEl.textContent = newSummary;
+                }
+            });
+            return true;
         }
+        return false;
     });
 
     // Values
@@ -973,10 +1030,58 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     const qtyVal = parseFloat(qty);
     const amountVal = (isNaN(priceVal) || isNaN(qtyVal)) ? 0 : (priceVal * qtyVal);
 
-    // 5. Column: Quantity
+    // 5. Column: Quantity (Editable para partidas con factor en el padre)
     const colQty = document.createElement('div');
     colQty.className = 'col-quantity';
     colQty.textContent = isNaN(qtyVal) ? '' : qtyVal.toLocaleString('es-ES', { minimumFractionDigits: 3 });
+
+    // Solo hacer editable si no es raíz y tiene un factor (qty) válido
+    const isEditableQty = !isRoot && !isNaN(qtyVal);
+    if (isEditableQty) {
+        setupExplicitEdit(colQty, (newQtyText) => {
+            const rawText = newQtyText.trim().replace(',', '.');
+            const newVal = parseFloat(rawText);
+            if (!isNaN(newVal) && newVal >= 0) {
+                const oldVal = qtyVal;
+                if (oldVal !== newVal) {
+                    // Buscar el factor en la descomposición del padre y actualizarlo
+                    let updated = false;
+                    Object.values(parsedData.concepts).forEach(parentConcept => {
+                        if (!Array.isArray(parentConcept.decomposition)) return;
+                        parentConcept.decomposition.forEach(item => {
+                            if (item.code === code && !updated) {
+                                logChange(
+                                    concept.code.replace(/#+\s*$/, ''),
+                                    `Cambio de cantidad: ${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })} → ${newVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })} ${concept.unit || ''}`,
+                                    `${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })}`,
+                                    `${newVal.toLocaleString('es-ES', { minimumFractionDigits: 3 })}`,
+                                    () => {
+                                        item.factor = newVal;
+                                        // Actualizar cantidad del concepto si tiene mediciones
+                                        concept.quantity = newVal;
+                                        // Marcar padre para recálculo
+                                        parentConcept.isManualPrice = false;
+                                    }
+                                );
+                                updated = true;
+                            }
+                        });
+                    });
+                    // Actualizar el importe mostrado en esta misma fila
+                    const newAmount = newVal * (parseFloat(concept.price) || 0);
+                    const amountEl = row.querySelector('.col-amount');
+                    if (amountEl) {
+                        amountEl.textContent = newAmount === 0 ? '' : newAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+                    }
+                    return true;
+                }
+            }
+            // Revertir si valor inválido
+            colQty.querySelector('.editable-val') && (colQty.querySelector('.editable-val').textContent =
+                isNaN(qtyVal) ? '' : qtyVal.toLocaleString('es-ES', { minimumFractionDigits: 3 }));
+            return false;
+        }, { isNumeric: true });
+    }
 
     // 6. Column: Price (Editable solo para partidas, no capítulos/raíces)
     const colPrice = document.createElement('div');
@@ -1004,17 +1109,12 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
             const rawText = newPriceText.trim().replace(',', '.');
             const newVal = parseFloat(rawText);
             if (!isNaN(newVal) && newVal >= 0) {
-                if (parseFloat(concept.price) !== newVal) {
-                    concept.price = newVal;
-                    concept.isManualPrice = true; // Bloquear precio manual
-                    recalculateAll();
-                    
-                    const scrollPos = document.getElementById('treeContent').scrollTop;
-                    renderCurrentLevel();
-                    document.getElementById('treeContent').scrollTop = scrollPos;
-                    
-                    updateTotalBudgetDisplay();
-                    saveHistoryState();
+                const oldVal = parseFloat(concept.price) || 0;
+                if (oldVal !== newVal) {
+                    logChange(concept.code.replace(/#+\s*$/, ''), `Cambio de precio unitario: ${newVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, `${oldVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, `${newVal.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`, () => {
+                        concept.price = newVal;
+                        concept.isManualPrice = true; // Bloquear precio manual
+                    });
                     return true;
                 }
             }
@@ -1485,6 +1585,17 @@ function showDetails(code) {
     const statedPrice = parseFloat(concept.price);
     // Usually they match. If not, maybe show warning or just stated.
     document.getElementById('detTotalCost').textContent = statedPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+    // Renderizar sección de certificaciones
+    const certSection = document.getElementById('detCertificationsSection');
+    if (certSection) {
+        if (!isChapter) {
+            certSection.style.display = 'block';
+            renderCertificationsTable(concept);
+        } else {
+            certSection.style.display = 'none';
+        }
+    }
 }
 
 /* ==========================================================================
@@ -4291,8 +4402,10 @@ if (detDescriptionEl) {
             if (rawCode) {
                 const concept = parsedData.concepts[rawCode];
                 if (newDescription !== concept.description) {
-                    concept.description = newDescription;
-                    saveHistoryState();
+                    const oldVal = concept.description;
+                    logChange(rawCode.replace(/#+\s*$/, ''), 'Cambio de descripción detallada', oldVal, newDescription, () => {
+                        concept.description = newDescription;
+                    });
                     return true;
                 }
             }
@@ -4314,15 +4427,17 @@ if (detSummaryEl) {
             if (rawCode) {
                 const concept = parsedData.concepts[rawCode];
                 if (newSummary && newSummary !== concept.summary) {
-                    concept.summary = newSummary;
-                    saveHistoryState();
-                    
-                    // Sincronizar en el árbol visual si existe
-                    const treeNodeSummary = document.querySelector(`.tree-node-container[data-code="${rawCode}"] > .tree-node-row > .col-summary`);
-                    if (treeNodeSummary) {
-                        const valEl = treeNodeSummary.querySelector('.editable-val') || treeNodeSummary;
-                        valEl.textContent = newSummary;
-                    }
+                    const oldVal = concept.summary;
+                    logChange(rawCode.replace(/#+\s*$/, ''), `Cambio de resumen a: "${newSummary}"`, oldVal, newSummary, () => {
+                        concept.summary = newSummary;
+                        
+                        // Sincronizar en el árbol visual si existe
+                        const treeNodeSummary = document.querySelector(`.tree-node-container[data-code="${rawCode}"] > .tree-node-row > .col-summary`);
+                        if (treeNodeSummary) {
+                            const valEl = treeNodeSummary.querySelector('.editable-val') || treeNodeSummary;
+                            valEl.textContent = newSummary;
+                        }
+                    });
                     return true;
                 }
             }
@@ -5064,19 +5179,47 @@ function calculateSCurve() {
     const leaves = ganttTasks.filter(t => !t.hasKids);
 
     leaves.forEach(task => {
+        const totalBudgetedQty = getConceptTotalQuantity(task.id);
+        const cost = (task.price || 0) * totalBudgetedQty;
+        
         const st = ganttState[task.id];
-        if (!st || !task.price) return;
-        const cost = task.price;
-        const prog = (st.progress || 0) / 100;
+        if (!st) return;
+        
         const start = Math.max(0, st.startWeek - 1); // 0-indexed
         const dur   = Math.max(1, st.durationWeeks);
         const costPerWeek = cost / dur;
 
+        // Distribución planificada
         for (let w = 0; w < dur; w++) {
             const idx = start + w;
             if (idx < totalWeeks) {
-                planned[idx]  += costPerWeek;
-                executed[idx] += costPerWeek * prog;
+                planned[idx] += costPerWeek;
+            }
+        }
+
+        // Distribución ejecutada: preferir certificaciones reales si existen
+        const certs = window.certifications[task.id];
+        if (certs && Object.keys(certs).length > 0) {
+            Object.keys(certs).forEach(m => {
+                const monthIndex = parseInt(m.replace(/[^\d]/g, '')) || 1;
+                const startW = (monthIndex - 1) * 4; // 4 semanas por mes aproximado
+                const qty = parseFloat(certs[m]) || 0;
+                const monthCost = qty * (task.price || 0);
+                const weeklyCost = monthCost / 4;
+                for (let w = 0; w < 4; w++) {
+                    const idx = startW + w;
+                    if (idx < totalWeeks) {
+                        executed[idx] += weeklyCost;
+                    }
+                }
+            });
+        } else {
+            const prog = (st.progress || 0) / 100;
+            for (let w = 0; w < dur; w++) {
+                const idx = start + w;
+                if (idx < totalWeeks) {
+                    executed[idx] += costPerWeek * prog;
+                }
             }
         }
     });
@@ -5719,18 +5862,7 @@ function confirmDraftPartida() {
             count++;
             newCode = `${String(count).padStart(2, '0')}#`;
         }
-        
-        // Add to roots
-        if (Array.isArray(parsedData.root_nodes)) {
-            parsedData.root_nodes.splice(draftNode.index, 0, newCode);
-        } else {
-            parsedData.root_nodes = Object.values(parsedData.root_nodes);
-            parsedData.root_nodes.splice(draftNode.index, 0, newCode);
-        }
     } else {
-        const parentConcept = parsedData.concepts[parentCode];
-        if (!parentConcept) return;
-
         const parentCodeClean = parentCode.replace(/#+\s*$/, '');
         let count = 1;
         newCode = `${parentCodeClean}.${String(count).padStart(2, '0')}`;
@@ -5738,40 +5870,54 @@ function confirmDraftPartida() {
             count++;
             newCode = `${parentCodeClean}.${String(count).padStart(2, '0')}`;
         }
-
-        // Add to parent decomposition
-        if (!Array.isArray(parentConcept.decomposition)) {
-            parentConcept.decomposition = [];
-        }
-        parentConcept.decomposition.splice(draftNode.index, 0, {
-            code: newCode,
-            factor: qty,
-            type: 4 // Subcontract / Simple node
-        });
-
-        if (Array.isArray(parentConcept.children)) {
-            parentConcept.children.push(newCode);
-        }
-
-        parentConcept.isManualPrice = false;
     }
 
-    // Create new concept
-    parsedData.concepts[newCode] = {
-        code: newCode,
-        unit: draftNode.unit || 'ud',
-        summary: summary,
-        price: price,
-        description: '',
-        decomposition: [],
-        measurements: [],
-        category: 'PARTIDA_NEW',
-        isNewPartida: true
-    };
+    const actionText = `Creación de partida: [${newCode.replace(/#+\s*$/, '')}] ${summary}`;
+    const valueText = `${qty.toLocaleString('es-ES')} ${draftNode.unit || 'ud'} x ${price.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
 
-    // Recalculate, save history, hide draft
-    recalculateAll();
-    saveHistoryState();
+    logChange(newCode.replace(/#+\s*$/, ''), actionText, '', valueText, () => {
+        if (parentCode === null) {
+            // Add to roots
+            if (Array.isArray(parsedData.root_nodes)) {
+                parsedData.root_nodes.splice(draftNode.index, 0, newCode);
+            } else {
+                parsedData.root_nodes = Object.values(parsedData.root_nodes);
+                parsedData.root_nodes.splice(draftNode.index, 0, newCode);
+            }
+        } else {
+            const parentConcept = parsedData.concepts[parentCode];
+            if (parentConcept) {
+                // Add to parent decomposition
+                if (!Array.isArray(parentConcept.decomposition)) {
+                    parentConcept.decomposition = [];
+                }
+                parentConcept.decomposition.splice(draftNode.index, 0, {
+                    code: newCode,
+                    factor: qty,
+                    type: 4 // Subcontract / Simple node
+                });
+
+                if (Array.isArray(parentConcept.children)) {
+                    parentConcept.children.push(newCode);
+                }
+
+                parentConcept.isManualPrice = false;
+            }
+        }
+
+        // Create new concept
+        parsedData.concepts[newCode] = {
+            code: newCode,
+            unit: draftNode.unit || 'ud',
+            summary: summary,
+            price: price,
+            description: '',
+            decomposition: [],
+            measurements: [],
+            category: 'PARTIDA_NEW',
+            isNewPartida: true
+        };
+    });
     
     draftActive = false;
     
@@ -5873,4 +6019,823 @@ function moveDraftRight() {
 }
 
 
+// =============================================================================
+// Premium Feature: Change Audit Log and Economic Impact
+// =============================================================================
+window.auditLog = [];
 
+function logChange(code, action, oldValue, newValue, applyChangeCallback) {
+    const pemBefore = calculateTotalPEM();
+    
+    // Apply modification (which usually mutates parsedData)
+    if (applyChangeCallback) applyChangeCallback();
+    
+    // Recalculate budget and update UI
+    recalculateAll();
+    updateTotalBudgetDisplay();
+    
+    const pemAfter = calculateTotalPEM();
+    const impact = pemAfter - pemBefore;
+    
+    // Save history state
+    saveHistoryState();
+    
+    // Push to audit log
+    window.auditLog = window.auditLog || [];
+    const timestamp = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    window.auditLog.push({
+        timestamp,
+        code,
+        description: action,
+        oldValue: oldValue || '',
+        newValue: newValue || '',
+        impact
+    });
+    
+    updateAuditLogModal();
+    
+    // Re-render tree preserving scroll position
+    const treeContent = document.getElementById('treeContent');
+    const scrollPos = treeContent ? treeContent.scrollTop : 0;
+    renderCurrentLevel();
+    if (treeContent) treeContent.scrollTop = scrollPos;
+}
+
+function calculateTotalPEM() {
+    if (!parsedData) return 0;
+    const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+    let total = 0;
+    roots.forEach(rootCode => {
+        const concept = parsedData.concepts[rootCode];
+        if (!concept) return;
+        const children = getConceptDecomposition(concept);
+        children.forEach(child => {
+            const childConcept = parsedData.concepts[child.code];
+            if (childConcept) {
+                total += (parseFloat(childConcept.price) || 0) * (parseFloat(child.factor) || 1);
+            }
+        });
+    });
+    if (total === 0) {
+        // Fallback to roots direct sum
+        roots.forEach(rootCode => {
+            const concept = parsedData.concepts[rootCode];
+            if (concept) {
+                total += parseFloat(concept.price) || 0;
+            }
+        });
+    }
+    return total;
+}
+
+function updateAuditLogModal() {
+    const tableBody = document.getElementById('auditTableBody');
+    const totalDeviationEl = document.getElementById('auditTotalDeviation');
+    const changesCountEl = document.getElementById('auditChangesCount');
+    
+    if (!tableBody) return;
+    
+    const logs = window.auditLog || [];
+    if (changesCountEl) changesCountEl.textContent = logs.length;
+    
+    let totalDeviation = 0;
+    
+    if (logs.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 24px; font-style: italic;">No se han realizado modificaciones en esta sesión</td>
+            </tr>
+        `;
+    } else {
+        tableBody.innerHTML = logs.map(log => {
+            totalDeviation += log.impact;
+            const sign = log.impact > 0 ? '+' : '';
+            const impactColor = log.impact > 0 ? '#ef4444' : (log.impact < 0 ? '#10b981' : 'var(--text-secondary)');
+            const impactStr = log.impact === 0 ? '0,00 €' : `${sign}${log.impact.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
+            
+            return `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 10px; color: var(--text-secondary);">${log.timestamp}</td>
+                    <td style="padding: 10px; font-weight: 500; color: var(--text-primary);">${log.code}</td>
+                    <td style="padding: 10px; color: var(--text-primary);">${log.description}</td>
+                    <td style="padding: 10px; text-align: right; font-weight: bold; color: ${impactColor};">${impactStr}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    if (totalDeviationEl) {
+        const devSign = totalDeviation > 0 ? '+' : '';
+        const devColor = totalDeviation > 0 ? '#ef4444' : (totalDeviation < 0 ? '#10b981' : 'var(--text-primary)');
+        totalDeviationEl.textContent = `${devSign}${totalDeviation.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
+        totalDeviationEl.style.color = devColor;
+    }
+}
+
+// Wire Audit Log Modal Toggles
+const auditLogBtn = document.getElementById('auditLogBtn');
+const auditModal = document.getElementById('auditModal');
+const closeAuditBtn = document.getElementById('closeAuditBtn');
+const closeAuditOkBtn = document.getElementById('closeAuditOkBtn');
+const clearAuditLogBtn = document.getElementById('clearAuditLogBtn');
+
+if (auditLogBtn && auditModal) {
+    auditLogBtn.onclick = () => {
+        updateAuditLogModal();
+        auditModal.style.display = 'flex';
+    };
+}
+if (closeAuditBtn) closeAuditBtn.onclick = () => { auditModal.style.display = 'none'; };
+if (closeAuditOkBtn) closeAuditOkBtn.onclick = () => { auditModal.style.display = 'none'; };
+if (clearAuditLogBtn) {
+    clearAuditLogBtn.onclick = () => {
+        if (confirm('¿Seguro que desea vaciar el historial de auditoría de esta sesión?')) {
+            window.auditLog = [];
+            updateAuditLogModal();
+        }
+    };
+}
+if (auditModal) {
+    auditModal.addEventListener('click', (e) => {
+        if (e.target === auditModal) auditModal.style.display = 'none';
+    });
+}
+
+
+// =============================================================================
+// Premium Feature: Certificaciones Mensuales de Obra
+// =============================================================================
+window.certifications = {};
+
+function getConceptTotalQuantity(code) {
+    if (!parsedData) return 0;
+    let totalQty = 0;
+    
+    function traverse(parentCode, accumulatedQty) {
+        const concept = parsedData.concepts[parentCode];
+        if (!concept) return;
+        
+        const children = getConceptDecomposition(concept);
+        children.forEach(child => {
+            if (child.code === code) {
+                totalQty += accumulatedQty * (parseFloat(child.factor) || 0);
+            }
+            traverse(child.code, accumulatedQty * (parseFloat(child.factor) || 1));
+        });
+    }
+    
+    const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+    roots.forEach(rootCode => {
+        if (rootCode === code) {
+            totalQty = 1.0;
+        } else {
+            traverse(rootCode, 1.0);
+        }
+    });
+    
+    return totalQty || 1.0;
+}
+
+function renderCertificationsTable(concept) {
+    const tableBody = document.getElementById('certTableBody');
+    const totalQtyEl = document.getElementById('certTotalQty');
+    const percentageEl = document.getElementById('certPercentage');
+    const totalAmountEl = document.getElementById('certTotalAmount');
+    const addBtn = document.getElementById('addCertificationBtn');
+
+    if (!tableBody) return;
+
+    const conceptCerts = window.certifications[concept.code] || {};
+    
+    let accumulated = 0;
+    const months = Object.keys(conceptCerts).sort((a, b) => {
+        const numA = parseInt(a.replace(/[^\d]/g, '')) || 0;
+        const numB = parseInt(b.replace(/[^\d]/g, '')) || 0;
+        return numA - numB;
+    });
+
+    if (months.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 12px; font-style: italic; color: var(--text-secondary);">No hay certificaciones registradas</td>
+            </tr>
+        `;
+    } else {
+        tableBody.innerHTML = months.map(m => {
+            const qty = conceptCerts[m];
+            accumulated += qty;
+            const amount = qty * (parseFloat(concept.price) || 0);
+            
+            return `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 8px; font-weight: 500; color: var(--text-primary);">${m}</td>
+                    <td style="padding: 8px; text-align: right; color: var(--text-primary);">${qty.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+                    <td style="padding: 8px; text-align: right; font-weight: 500; color: var(--text-primary);">${amount.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+                    <td style="padding: 8px; text-align: center;">
+                        <button type="button" class="gantt-action-btn" onclick="event.stopPropagation(); deleteCertification('${concept.code}', '${m}')" style="background: none; border: none; color: #ef4444; padding: 2px; font-size: 0.85rem; cursor: pointer;" title="Eliminar Certificación">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    const price = parseFloat(concept.price) || 0;
+    const totalBudgetedQty = getConceptTotalQuantity(concept.code);
+    const pct = totalBudgetedQty === 0 ? 0 : (accumulated / totalBudgetedQty) * 100;
+    const certAmount = accumulated * price;
+
+    if (totalQtyEl) totalQtyEl.textContent = `${accumulated.toLocaleString('es-ES', { minimumFractionDigits: 2 })} / ${totalBudgetedQty.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
+    if (percentageEl) {
+        percentageEl.textContent = pct.toFixed(1) + '%';
+        if (pct > 100) percentageEl.style.color = '#ef4444';
+        else if (pct === 100) percentageEl.style.color = '#10b981';
+        else percentageEl.style.color = 'var(--text-primary)';
+    }
+    if (totalAmountEl) totalAmountEl.textContent = certAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+
+    if (addBtn) {
+        addBtn.onclick = () => {
+            openCertEditModal(concept.code, totalBudgetedQty, accumulated);
+        };
+    }
+
+    // Sincronizar Gantt progress
+    try {
+        if (window.ganttTasks && window.ganttTasks.length > 0) {
+            const ganttTask = window.ganttTasks.find(t => t.id === concept.code);
+            if (ganttTask) {
+                window.ganttState[concept.code] = window.ganttState[concept.code] || { startWeek: 1, durationWeeks: 4 };
+                window.ganttState[concept.code].progress = Math.min(100, Math.round(pct));
+                ganttSave();
+                recalculateParentProgress();
+            }
+        }
+    } catch (e) {
+        console.warn("Gantt progress sync warning:", e);
+    }
+}
+
+function openCertEditModal(conceptCode, totalBudgetedQty, currentAccumulated) {
+    const modal = document.getElementById('certEditModal');
+    const form = document.getElementById('certEditForm');
+    const monthSelect = document.getElementById('certMonthSelect');
+    const qtyInput = document.getElementById('certQtyInput');
+    const maxQtyHint = document.getElementById('certMaxQtyHint');
+    
+    if (!modal) return;
+    
+    qtyInput.value = '';
+    const available = Math.max(0, totalBudgetedQty - currentAccumulated);
+    if (maxQtyHint) maxQtyHint.textContent = `Cant. disponible: ${available.toLocaleString('es-ES', { minimumFractionDigits: 2 })} (Tot. presupuestada: ${totalBudgetedQty.toLocaleString('es-ES', { minimumFractionDigits: 2 })})`;
+    
+    qtyInput.value = Math.round(available * 100) / 100 || '';
+    
+    modal.style.display = 'flex';
+    
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        const month = monthSelect.value;
+        const qty = parseFloat(qtyInput.value) || 0;
+        
+        if (qty <= 0) {
+            alert("La cantidad debe ser mayor que cero.");
+            return;
+        }
+        
+        window.certifications[conceptCode] = window.certifications[conceptCode] || {};
+        window.certifications[conceptCode][month] = qty;
+        
+        const currentFileName = parsedData.properties.description || 'default';
+        const certKey = `budget_certifications_${currentFileName.replace(/\s+/g, '_')}`;
+        localStorage.setItem(certKey, JSON.stringify(window.certifications));
+        
+        modal.style.display = 'none';
+        
+        const concept = parsedData.concepts[conceptCode];
+        if (concept) {
+            renderCertificationsTable(concept);
+        }
+    };
+}
+
+function deleteCertification(conceptCode, month) {
+    if (confirm(`¿Seguro que desea eliminar la certificación del ${month}?`)) {
+        if (window.certifications[conceptCode]) {
+            delete window.certifications[conceptCode][month];
+            if (Object.keys(window.certifications[conceptCode]).length === 0) {
+                delete window.certifications[conceptCode];
+            }
+            
+            const currentFileName = parsedData.properties.description || 'default';
+            const certKey = `budget_certifications_${currentFileName.replace(/\s+/g, '_')}`;
+            localStorage.setItem(certKey, JSON.stringify(window.certifications));
+            
+            const concept = parsedData.concepts[conceptCode];
+            if (concept) {
+                renderCertificationsTable(concept);
+            }
+        }
+    }
+}
+
+// Wire Cert Modal Close Controls
+const closeCertEditBtn = document.getElementById('closeCertEditBtn');
+const cancelCertEditBtn = document.getElementById('cancelCertEditBtn');
+const certEditModal = document.getElementById('certEditModal');
+
+if (closeCertEditBtn) closeCertEditBtn.onclick = () => { certEditModal.style.display = 'none'; };
+if (cancelCertEditBtn) cancelCertEditBtn.onclick = () => { certEditModal.style.display = 'none'; };
+if (certEditModal) {
+    certEditModal.addEventListener('click', (e) => {
+        if (e.target === certEditModal) certEditModal.style.display = 'none';
+    });
+}
+
+
+// =============================================================================
+// Premium Feature: Exportador de Gantt a MS Project XML
+// =============================================================================
+function exportGanttToXML() {
+    if (!window.ganttTasks || window.ganttTasks.length === 0) {
+        alert("No hay tareas de planificación para exportar.");
+        return;
+    }
+
+    const currentFileName = document.getElementById('fileName')?.textContent || 'proyecto';
+    const cleanFileName = currentFileName.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_");
+
+    let xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+    <Name>${cleanFileName}</Name>
+    <StartDate>${ganttStartDate}T08:00:00</StartDate>
+    <Tasks>
+`;
+
+    window.ganttTasks.forEach((task, index) => {
+        const uid = index + 1;
+        const name = escapeXml(task.summary);
+        const st = window.ganttState[task.id] || { startWeek: 1, durationWeeks: 4, progress: 0 };
+        
+        const taskStartDate = new Date(ganttStartDate);
+        taskStartDate.setDate(taskStartDate.getDate() + (st.startWeek - 1) * 7);
+        const startStr = taskStartDate.toISOString().split('T')[0] + 'T08:00:00';
+        
+        const taskFinishDate = new Date(taskStartDate);
+        taskFinishDate.setDate(taskFinishDate.getDate() + (st.durationWeeks * 7));
+        const finishStr = taskFinishDate.toISOString().split('T')[0] + 'T17:00:00';
+        
+        const durationHours = st.durationWeeks * 40;
+        const durationStr = `PT${durationHours}H0M0S`;
+
+        const isSummary = task.hasKids ? 1 : 0;
+        const progress = st.progress || 0;
+
+        const outlineLevel = task.depth;
+        const outlineNumber = task.code;
+
+        xml += `        <Task>
+            <UID>${uid}</UID>
+            <ID>${uid}</ID>
+            <Name>${name}</Name>
+            <Active>1</Active>
+            <Manual>0</Manual>
+            <Start>${startStr}</Start>
+            <Finish>${finishStr}</Finish>
+            <Duration>${durationStr}</Duration>
+            <PercentComplete>${progress}</PercentComplete>
+            <Summary>${isSummary}</Summary>
+            <OutlineLevel>${outlineLevel}</OutlineLevel>
+            <OutlineNumber>${outlineNumber}</OutlineNumber>
+`;
+
+        const taskDeps = window.ganttDeps ? window.ganttDeps.filter(d => d.to === task.id) : [];
+        taskDeps.forEach(dep => {
+            const predIndex = window.ganttTasks.findIndex(t => t.id === dep.from);
+            if (predIndex >= 0) {
+                const predUid = predIndex + 1;
+                xml += `            <PredecessorLink>
+                <PredecessorUID>${predUid}</PredecessorUID>
+                <Type>1</Type>
+                <CrossProject>0</CrossProject>
+                <LinkLag>0</LinkLag>
+                <LagFormat>7</LagFormat>
+            </PredecessorLink>
+`;
+            }
+        });
+
+        xml += `        </Task>\n`;
+    });
+
+    xml += `    </Tasks>
+</Project>`;
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${cleanFileName}_planning.xml`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function escapeXml(unsafe) {
+    return unsafe.replace(/[<>&'"]/g, (c) => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+}
+
+
+
+// Wire Project XML Export Button
+const exportGanttXmlBtn = document.getElementById('exportGanttXmlBtn');
+if (exportGanttXmlBtn) {
+    exportGanttXmlBtn.addEventListener('click', exportGanttToXML);
+}
+
+
+// =============================================================================
+// FEATURE: Modal Global de Certificaciones de Obra
+// =============================================================================
+
+/**
+ * Calcula y renderiza el modal de resumen global de certificaciones.
+ * Agrega todas las certificaciones de todas las partidas en window.certifications.
+ */
+function renderCertObrasModal() {
+    if (!parsedData) return;
+
+    const tbody = document.getElementById('certObrasTableBody');
+    const kpiStrip = document.getElementById('certObrasKpiStrip');
+    const globalPctEl = document.getElementById('certObrasGlobalPct');
+    const progressBarEl = document.getElementById('certObrasProgressBar');
+    if (!tbody) return;
+
+    const certs = window.certifications || {};
+    const certCodes = Object.keys(certs);
+
+    // Recopilar datos de cada partida certificada
+    const rows = [];
+    let totalPresupuestado = 0;
+    let totalCertificado = 0;
+    let totalImpCertif = 0;
+    let totalImpPresup = 0;
+
+    certCodes.forEach(code => {
+        const concept = parsedData.concepts[code];
+        if (!concept) return;
+
+        const conceptCerts = certs[code];
+        let accumCertif = 0;
+        Object.values(conceptCerts).forEach(qty => {
+            accumCertif += parseFloat(qty) || 0;
+        });
+
+        const totalQty = getConceptTotalQuantity(code);
+        const price = parseFloat(concept.price) || 0;
+        const pct = totalQty === 0 ? 0 : (accumCertif / totalQty) * 100;
+        const impCertif = accumCertif * price;
+        const impPresup = totalQty * price;
+
+        totalCertificado += accumCertif;
+        totalPresupuestado += totalQty;
+        totalImpCertif += impCertif;
+        totalImpPresup += impPresup;
+
+        rows.push({
+            rawCode: code,
+            code: code.replace(/#+\s*$/, ''),
+            summary: concept.summary || '(Sin título)',
+            unit: concept.unit || '',
+            totalQty,
+            accumCertif,
+            pct,
+            impCertif,
+            impPresup
+        });
+    });
+
+    // Ordenar por % avance descendente
+    rows.sort((a, b) => b.pct - a.pct);
+
+    // ── KPI Strip ──
+    const globalPct = totalImpPresup === 0 ? 0 : (totalImpCertif / totalImpPresup) * 100;
+    if (kpiStrip) {
+        const kpis = [
+            {
+                icon: '✅',
+                label: 'Partidas Certificadas',
+                val: `${rows.length} / ${Object.keys(parsedData.concepts).filter(c => !c.endsWith('#')).length}`,
+                color: '#3b82f6'
+            },
+            {
+                icon: '💶',
+                label: 'Importe Certificado',
+                val: totalImpCertif.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €',
+                color: '#10b981'
+            },
+            {
+                icon: '📋',
+                label: 'Importe Presupuestado',
+                val: totalImpPresup.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €',
+                color: 'var(--text-primary)'
+            },
+            {
+                icon: '📈',
+                label: 'Avance Económico',
+                val: globalPct.toFixed(1) + '%',
+                color: globalPct >= 100 ? '#10b981' : globalPct > 50 ? '#f59e0b' : '#3b82f6'
+            }
+        ];
+        kpiStrip.innerHTML = kpis.map(k => `
+            <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 1.3rem; display: block; margin-bottom: 4px;">${k.icon}</span>
+                <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">${k.label}</span>
+                <span style="font-size: 0.95rem; font-weight: 700; color: ${k.color};">${k.val}</span>
+            </div>
+        `).join('');
+    }
+
+    // ── Barra de progreso global ──
+    if (globalPctEl) globalPctEl.textContent = globalPct.toFixed(1) + '%';
+    if (progressBarEl) {
+        progressBarEl.style.width = Math.min(100, globalPct).toFixed(1) + '%';
+        progressBarEl.style.background = globalPct >= 100
+            ? 'linear-gradient(90deg, #10b981, #059669)'
+            : globalPct > 50
+                ? 'linear-gradient(90deg, #f59e0b, #10b981)'
+                : 'linear-gradient(90deg, #3b82f6, #10b981)';
+    }
+
+    // ── Tabla de partidas ──
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 32px; color: var(--text-secondary); font-style: italic;">
+            No hay certificaciones registradas.<br>
+            <span style="font-size: 0.8rem;">Selecciona una partida en el árbol y usa el botón ➕ Certificar en el panel de detalles.</span>
+        </td></tr>`;
+    } else {
+        tbody.innerHTML = rows.map((r, idx) => {
+            const pctColor = r.pct >= 100 ? '#10b981' : r.pct >= 50 ? '#f59e0b' : '#3b82f6';
+            const pctStr = r.pct.toFixed(1) + '%';
+            const rowBg = idx % 2 === 1 ? 'background: var(--hover-bg, rgba(0,0,0,0.02));' : '';
+            return `
+                <tr style="${rowBg} border-bottom: 1px solid var(--border-color);" class="cert-obras-row"
+                    data-search="${r.code.toLowerCase()} ${r.summary.toLowerCase()}">
+                    <td style="padding: 9px 12px; font-family: monospace; font-size: 0.78rem; color: var(--accent); white-space: nowrap;">${r.code}</td>
+                    <td style="padding: 9px 12px; color: var(--text-primary); max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${r.summary}">${r.summary}</td>
+                    <td style="padding: 9px 8px; text-align: center; color: var(--text-secondary);">${r.unit}</td>
+                    <td style="padding: 9px 8px; text-align: right; color: var(--text-secondary);">${r.totalQty.toLocaleString('es-ES', { minimumFractionDigits: 3 })}</td>
+                    <td style="padding: 9px 8px; text-align: right; font-weight: 600; color: var(--text-primary);">${r.accumCertif.toLocaleString('es-ES', { minimumFractionDigits: 3 })}</td>
+                    <td style="padding: 9px 8px; text-align: right;">
+                        <span style="font-weight: 700; color: ${pctColor};">${pctStr}</span>
+                        <div style="height: 4px; background: var(--border-color); border-radius: 99px; margin-top: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: ${Math.min(100, r.pct).toFixed(1)}%; background: ${pctColor}; border-radius: 99px;"></div>
+                        </div>
+                    </td>
+                    <td style="padding: 9px 8px; text-align: right; font-weight: 600; color: #10b981;">${r.impCertif.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+                    <td style="padding: 9px 8px; text-align: right; color: var(--text-secondary);">${r.impPresup.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+                    <td style="padding: 9px 8px; text-align: center;">
+                        <button type="button" onclick="deleteCertObrasRow('${r.rawCode}')"
+                            title="Eliminar todas las certificaciones de esta partida"
+                            style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.85rem; padding:2px 4px;">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // ── Filtro de búsqueda ──
+    const filterInput = document.getElementById('certObrasFilter');
+    if (filterInput) {
+        filterInput.oninput = () => {
+            const term = filterInput.value.trim().toLowerCase();
+            document.querySelectorAll('.cert-obras-row').forEach(row => {
+                const search = row.dataset.search || '';
+                row.style.display = term === '' || search.includes(term) ? '' : 'none';
+            });
+        };
+        // Limpiar filtro previo
+        filterInput.value = '';
+    }
+}
+
+// ── Event Listeners del botón CERTIFICACIONES ──
+const certObrasBtn = document.getElementById('certObrasBtn');
+const certObrasModal = document.getElementById('certObrasModal');
+const closeCertObrasBtn = document.getElementById('closeCertObrasBtn');
+
+if (certObrasBtn && certObrasModal) {
+    certObrasBtn.addEventListener('click', () => {
+        renderCertObrasModal();
+        certObrasModal.style.display = 'flex';
+        // Inicializar el buscador de partidas
+        initCertObrasSearchPanel();
+    });
+}
+
+if (closeCertObrasBtn) {
+    closeCertObrasBtn.addEventListener('click', () => {
+        certObrasModal.style.display = 'none';
+    });
+}
+
+if (certObrasModal) {
+    certObrasModal.addEventListener('click', (e) => {
+        if (e.target === certObrasModal) certObrasModal.style.display = 'none';
+    });
+}
+
+// ── Lógica del Panel de Nueva Certificación ──
+let _certObrasSelectedCode = null; // código de la partida seleccionada en el buscador
+
+function initCertObrasSearchPanel() {
+    const searchInput = document.getElementById('certObrasSearchInput');
+    const dropdown = document.getElementById('certObrasDropdown');
+    const selectedLabel = document.getElementById('certObrasSelectedPartida');
+    const unitLabel = document.getElementById('certObrasUnitLabel');
+    const qtyHint = document.getElementById('certObrasQtyHint');
+    const qtyInput = document.getElementById('certObrasQtyInput');
+    const addBtn = document.getElementById('certObrasAddBtn');
+
+    if (!searchInput) return;
+
+    // Reset
+    _certObrasSelectedCode = null;
+    searchInput.value = '';
+    if (selectedLabel) { selectedLabel.style.display = 'none'; selectedLabel.textContent = ''; }
+    if (unitLabel) unitLabel.textContent = '';
+    if (qtyHint) qtyHint.textContent = '';
+    if (qtyInput) qtyInput.value = '';
+
+    function getLeafPartidas() {
+        // Devuelve todas las partidas hoja (con precio, sin categoría de capítulo)
+        if (!parsedData) return [];
+        return Object.values(parsedData.concepts).filter(c => {
+            const cat = (c.category || '').toUpperCase();
+            return !cat.includes('CHAPTER') && !cat.includes('ROOT') && !c.code.endsWith('#') &&
+                (c.price !== undefined && c.price !== null);
+        });
+    }
+
+    function showDropdown(term) {
+        if (!dropdown) return;
+        const lower = term.toLowerCase();
+        const matches = getLeafPartidas().filter(c => {
+            const code = (c.code || '').toLowerCase().replace(/#+\s*$/, '');
+            const summary = (c.summary || '').toLowerCase();
+            return code.includes(lower) || summary.includes(lower);
+        }).slice(0, 12);
+
+        if (matches.length === 0 || term.length < 2) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        dropdown.innerHTML = matches.map(c => {
+            const code = c.code.replace(/#+\s*$/, '');
+            return `
+                <div class="cert-search-item" data-code="${c.code}"
+                    style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; display: flex; gap: 10px; align-items: center;"
+                    onmouseenter="this.style.background='var(--hover-bg)'"
+                    onmouseleave="this.style.background=''"
+                    onclick="selectCertObrasPartida('${c.code}')"
+                >
+                    <span style="font-family: monospace; color: var(--accent); flex-shrink: 0; font-size: 0.75rem;">${code}</span>
+                    <span style="color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.summary || ''}">${c.summary || '(Sin título)'}</span>
+                    <span style="color: var(--text-secondary); flex-shrink: 0; font-size: 0.75rem;">${(parseFloat(c.price)||0).toLocaleString('es-ES', {minimumFractionDigits:2})} €/${c.unit||'ud'}</span>
+                </div>
+            `;
+        }).join('');
+        dropdown.style.display = 'block';
+    }
+
+    let _searchTimer;
+    searchInput.oninput = () => {
+        _certObrasSelectedCode = null;
+        if (selectedLabel) { selectedLabel.style.display = 'none'; }
+        if (unitLabel) unitLabel.textContent = '';
+        if (qtyHint) qtyHint.textContent = '';
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(() => showDropdown(searchInput.value.trim()), 180);
+    };
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function closeDrop(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    }, { once: false });
+
+    // Botón Certificar
+    if (addBtn) {
+        addBtn.onclick = () => submitCertObras();
+    }
+}
+
+function selectCertObrasPartida(code) {
+    const concept = parsedData && parsedData.concepts[code];
+    if (!concept) return;
+
+    _certObrasSelectedCode = code;
+
+    const searchInput = document.getElementById('certObrasSearchInput');
+    const dropdown = document.getElementById('certObrasDropdown');
+    const selectedLabel = document.getElementById('certObrasSelectedPartida');
+    const unitLabel = document.getElementById('certObrasUnitLabel');
+    const qtyHint = document.getElementById('certObrasQtyHint');
+    const qtyInput = document.getElementById('certObrasQtyInput');
+
+    const cleanCode = code.replace(/#+\s*$/, '');
+    if (searchInput) searchInput.value = `${cleanCode} — ${concept.summary || ''}`;
+    if (dropdown) dropdown.style.display = 'none';
+
+    const totalQty = getConceptTotalQuantity(code);
+    const certs = window.certifications[code] || {};
+    const accumulated = Object.values(certs).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+    const available = Math.max(0, totalQty - accumulated);
+
+    if (selectedLabel) {
+        selectedLabel.textContent = `✅ Seleccionada | Total presup.: ${totalQty.toLocaleString('es-ES', {minimumFractionDigits:3})} ${concept.unit||''} | Certificado: ${accumulated.toLocaleString('es-ES', {minimumFractionDigits:3})} | Disponible: ${available.toLocaleString('es-ES', {minimumFractionDigits:3})}`;
+        selectedLabel.style.display = 'block';
+    }
+    if (unitLabel) unitLabel.textContent = `(${concept.unit || 'ud'})`;
+    if (qtyHint) qtyHint.textContent = `Disponible: ${available.toLocaleString('es-ES', {minimumFractionDigits:3})}`;
+    if (qtyInput) {
+        qtyInput.value = available > 0 ? (Math.round(available * 1000) / 1000) : '';
+        qtyInput.focus();
+    }
+}
+
+function submitCertObras() {
+    if (!_certObrasSelectedCode) {
+        alert('Selecciona primero una partida del buscador.');
+        return;
+    }
+    const qtyInput = document.getElementById('certObrasQtyInput');
+    const monthSelect = document.getElementById('certObrasMonthSelect');
+    const qty = parseFloat(qtyInput && qtyInput.value);
+    const month = monthSelect ? monthSelect.value : 'Mes 1';
+
+    if (isNaN(qty) || qty <= 0) {
+        alert('Introduce una cantidad mayor que cero.');
+        qtyInput && (qtyInput.style.borderColor = '#ef4444');
+        return;
+    }
+    if (qtyInput) qtyInput.style.borderColor = '';
+
+    // Guardar certificación
+    window.certifications[_certObrasSelectedCode] = window.certifications[_certObrasSelectedCode] || {};
+    // Si ya existe ese mes, sumar (no reemplazar)
+    const prev = parseFloat(window.certifications[_certObrasSelectedCode][month]) || 0;
+    window.certifications[_certObrasSelectedCode][month] = prev + qty;
+
+    // Persistir en localStorage
+    const currentFileName = (parsedData.properties && parsedData.properties.description) || 'default';
+    const certKey = `budget_certifications_${currentFileName.replace(/\s+/g, '_')}`;
+    localStorage.setItem(certKey, JSON.stringify(window.certifications));
+
+    // Actualizar modal
+    _certObrasSelectedCode = null;
+    const searchInput = document.getElementById('certObrasSearchInput');
+    if (searchInput) searchInput.value = '';
+    const selectedLabel = document.getElementById('certObrasSelectedPartida');
+    if (selectedLabel) selectedLabel.style.display = 'none';
+    if (qtyInput) qtyInput.value = '';
+    const unitLabel = document.getElementById('certObrasUnitLabel');
+    if (unitLabel) unitLabel.textContent = '';
+    const qtyHint = document.getElementById('certObrasQtyHint');
+    if (qtyHint) qtyHint.textContent = '';
+
+    renderCertObrasModal();
+
+    // Feedback visual breve
+    const addBtn = document.getElementById('certObrasAddBtn');
+    if (addBtn) {
+        const orig = addBtn.innerHTML;
+        addBtn.innerHTML = '✔ Guardado!';
+        addBtn.style.background = '#059669';
+        setTimeout(() => {
+            addBtn.innerHTML = orig;
+            addBtn.style.background = '';
+        }, 1800);
+    }
+}
+
+function deleteCertObrasRow(code) {
+    if (!code || !window.certifications[code]) return;
+    const concept = parsedData && parsedData.concepts[code];
+    const label = concept ? concept.summary : code;
+    if (confirm(`¿Eliminar TODAS las certificaciones de la partida "${label}"?`)) {
+        delete window.certifications[code];
+        const currentFileName = (parsedData.properties && parsedData.properties.description) || 'default';
+        const certKey = `budget_certifications_${currentFileName.replace(/\s+/g, '_')}`;
+        localStorage.setItem(certKey, JSON.stringify(window.certifications));
+        renderCertObrasModal();
+    }
+}

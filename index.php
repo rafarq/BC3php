@@ -34,11 +34,13 @@ header("Pragma: no-cache");
                         <button type="button" id="dashboardBtn" class="dashboard-btn">DASHBOARD</button>
                     </div>
 
-                    <!-- Contenedor: PRESUPUESTO, PRECIOS & PLANNING -->
+                    <!-- Contenedor: PRESUPUESTO, PRECIOS, PLANNING & CERTIFICACIONES -->
                     <div class="control-container" id="vizContainer" style="display:none;">
                         <button type="button" id="presupuestoBtn" class="presupuesto-btn active">PRESUPUESTO</button>
                         <button type="button" id="pricesBtn" class="prices-btn">PRECIOS</button>
                         <button type="button" id="planningBtn" class="planning-btn">PLANNING</button>
+                        <button type="button" id="certObrasBtn" class="cert-obras-btn">CERTIFICACIONES</button>
+                        <button type="button" id="chaptersBtn" class="chapters-btn">CAP&#205;TULOS</button>
                     </div>
 
                     <!-- Contenedor: COEFICIENTES -->
@@ -59,6 +61,7 @@ header("Pragma: no-cache");
                             <div class="dropdown-content">
                                 <button type="button" id="exportPdfBtn">EXPORTAR A PDF</button>
                                 <button type="button" id="exportExcelBtn">EXPORTAR A EXCEL</button>
+                                <button type="button" id="exportBc3Btn" style="color: #059669; font-weight: 600;">⬇ GUARDAR COMO BC3</button>
                             </div>
                         </div>
                     </div>
@@ -80,9 +83,10 @@ header("Pragma: no-cache");
                 <div id="stats" style="font-size: 0.7em; color: #888; margin-top: 4px; text-align: center;"></div>
             </div>
 
-            <!-- Botones de la derecha: Tema e Info -->
+            <!-- Botones de la derecha: Tema, Auditoría e Info -->
             <div class="right-controls">
                 <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Cambiar tema">🌙</button>
+                <button type="button" id="auditLogBtn" class="audit-log-btn" aria-label="Auditoría de Cambios" title="Auditoría de Cambios" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px; display: none; filter: grayscale(0.2); transition: transform 0.2s;">📜</button>
                 <button type="button" id="infoBtn" class="info-btn" aria-label="Información">ℹ️</button>
             </div>
         </header>
@@ -282,6 +286,86 @@ header("Pragma: no-cache");
                             <div id="detMeasurements"></div>
                         </section>
 
+                        <!-- Certificaciones Mensuales de Obra -->
+                        <section class="section" id="detCertificationsSection" style="display:none; margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="margin: 0;">Certificaciones de Obra</h3>
+                                <button type="button" id="addCertificationBtn" class="gantt-action-btn" style="padding: 4px 10px; font-size: 0.8rem; margin: 0; background: var(--accent, #3b82f6); color: white; border: none;">➕ Certificar</button>
+                            </div>
+                            
+                            <!-- KPIs Certificación -->
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+                                <div style="background: var(--hover-bg, var(--bg-hover)); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; text-align: center;">
+                                    <span style="display: block; font-size: 0.72rem; color: var(--text-secondary);">Certificado Acum.</span>
+                                    <span id="certTotalQty" style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">0,00</span>
+                                </div>
+                                <div style="background: var(--hover-bg, var(--bg-hover)); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; text-align: center;">
+                                    <span style="display: block; font-size: 0.72rem; color: var(--text-secondary);">% Certificado</span>
+                                    <span id="certPercentage" style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">0,0%</span>
+                                </div>
+                                <div style="background: var(--hover-bg, var(--bg-hover)); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; text-align: center;">
+                                    <span style="display: block; font-size: 0.72rem; color: var(--text-secondary);">Importe Cert.</span>
+                                    <span id="certTotalAmount" style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">0,00 €</span>
+                                </div>
+                            </div>
+
+                            <div style="border: 1px solid var(--border-color); border-radius: 6px; max-height: 180px; overflow-y: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
+                                    <thead>
+                                        <tr style="background: var(--hover-bg, var(--bg-hover)); border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-weight: 600;">
+                                            <th style="padding: 8px;">Mes</th>
+                                            <th style="padding: 8px; text-align: right;">Cantidad</th>
+                                            <th style="padding: 8px; text-align: right;">Importe</th>
+                                            <th style="padding: 8px; width: 40px; text-align: center;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="certTableBody">
+                                        <!-- Injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <!-- Modal para Añadir/Editar Certificación -->
+                        <div id="certEditModal" class="modal" style="display:none; z-index: 10001;">
+                            <div class="modal-content" style="max-width: 320px;">
+                                <div class="modal-header">
+                                    <h3>Añadir Certificación</h3>
+                                    <button type="button" class="close-btn" id="closeCertEditBtn">✕</button>
+                                </div>
+                                <div class="modal-body" style="padding: 16px;">
+                                    <form id="certEditForm" onsubmit="event.preventDefault();">
+                                        <div style="margin-bottom: 12px;">
+                                            <label style="display:block; margin-bottom: 4px; font-weight:500;">Mes de Certificación:</label>
+                                            <select id="certMonthSelect" class="filter-select" style="width: 100%; padding: 6px; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                                                <option value="Mes 1">Mes 1</option>
+                                                <option value="Mes 2">Mes 2</option>
+                                                <option value="Mes 3">Mes 3</option>
+                                                <option value="Mes 4">Mes 4</option>
+                                                <option value="Mes 5">Mes 5</option>
+                                                <option value="Mes 6">Mes 6</option>
+                                                <option value="Mes 7">Mes 7</option>
+                                                <option value="Mes 8">Mes 8</option>
+                                                <option value="Mes 9">Mes 9</option>
+                                                <option value="Mes 10">Mes 10</option>
+                                                <option value="Mes 11">Mes 11</option>
+                                                <option value="Mes 12">Mes 12</option>
+                                            </select>
+                                        </div>
+                                        <div style="margin-bottom: 16px;">
+                                            <label style="display:block; margin-bottom: 4px; font-weight:500;">Cantidad a Certificar: <span style="color:#ef4444;">*</span></label>
+                                            <input type="number" id="certQtyInput" required step="any" min="0" placeholder="0.00" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; background-color:var(--bg-color); color:var(--text-primary); outline:none;">
+                                            <span style="font-size:0.72rem; color:var(--text-secondary); display:block; margin-top:4px;" id="certMaxQtyHint">Cant. disponible: 0.00</span>
+                                        </div>
+                                        <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                            <button type="button" id="cancelCertEditBtn" class="gantt-action-btn" style="background:none; border:1px solid var(--border-color); color:var(--text-secondary); padding: 6px 12px;">Cancelar</button>
+                                            <button type="submit" id="submitCertBtn" class="process-btn" style="padding: 6px 16px; margin: 0;">Aceptar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Contenedor para añadir nueva partida -->
                         <div id="addPartidaContainer" style="display:none; margin-bottom: 16px;">
                             <button type="button" id="addPartidaBtn" class="add-partida-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border: none; border-radius: 8px; background-color: var(--accent, #3b82f6); color: white; font-weight: 500; cursor: pointer; transition: background-color 0.2s;">
@@ -358,9 +442,52 @@ header("Pragma: no-cache");
                     </table>
                 </div>
             </div>
+
+            <!-- Vista Resumen por Capítulos -->
+            <div class="chapters-panel" id="chaptersPanel" style="display:none;">
+                <!-- KPI strip -->
+                <div id="chaptersKpiStrip" style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; padding:20px 24px 14px; border-bottom:1px solid var(--border-color); background:var(--hover-bg,var(--bg-hover));"></div>
+                <!-- Header + search -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 24px 10px;">
+                    <div>
+                        <h2 style="margin:0; font-size:1.1rem;">Resumen por Cap&#237;tulos</h2>
+                        <span style="font-size:0.78rem; color:var(--text-secondary);">Desglose de costes por tipo de recurso</span>
+                    </div>
+                    <input type="text" id="chaptersSearch" placeholder="Buscar cap&#237;tulo..." autocomplete="off"
+                        style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; font-size:0.82rem; background:var(--bg-color); color:var(--text-primary); outline:none; width:220px;">
+                </div>
+                <!-- Legend -->
+                <div style="display:flex; gap:16px; padding:0 24px 10px; font-size:0.75rem; color:var(--text-secondary); flex-wrap:wrap;">
+                    <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin-right:4px;"></span>Mano de Obra</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:4px;"></span>Materiales</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:2px;margin-right:4px;"></span>Maquinaria</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;background:#8b5cf6;border-radius:2px;margin-right:4px;"></span>Subcontratas</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;background:#94a3b8;border-radius:2px;margin-right:4px;"></span>Resto</span>
+                </div>
+                <!-- Table -->
+                <div class="chapters-table-container">
+                    <table class="chapters-table" id="chaptersTable">
+                        <thead>
+                            <tr>
+                                <th style="width:120px;">C&#243;digo</th>
+                                <th>Cap&#237;tulo</th>
+                                <th style="width:130px; text-align:right;">Importe (€)</th>
+                                <th style="width:80px; text-align:right;">% PEM</th>
+                                <th style="width:280px;">Composici&#243;n de recursos</th>
+                                <th style="width:90px; text-align:right;">MO</th>
+                                <th style="width:90px; text-align:right;">MAT</th>
+                                <th style="width:90px; text-align:right;">MAQ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chaptersTableBody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </main>
         <footer class="app-footer">
-            <span>© Licencia Open Source - Software Libre y de Derechos Abiertos</span>
+            <span>&#169; Licencia Open Source - Software Libre y de Derechos Abiertos</span>
             <span>V1.0.0</span>
         </footer>
     </div>
@@ -416,6 +543,135 @@ header("Pragma: no-cache");
                     <div class="chart-container" style="height:220px;">
                         <canvas id="sCurveChart"></canvas>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Certificaciones de Obra (Resumen Global) -->
+    <div id="certObrasModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3>🏗️ Certificaciones de Obra — Resumen Global</h3>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <select id="certObrasMonthPdfSelect"
+                        style="padding:5px 8px; border:1px solid var(--border-color); border-radius:6px; font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); outline:none;">
+                        <option value="all">Todos los meses</option>
+                        <option value="Mes 1">Mes 1</option>
+                        <option value="Mes 2">Mes 2</option>
+                        <option value="Mes 3">Mes 3</option>
+                        <option value="Mes 4">Mes 4</option>
+                        <option value="Mes 5">Mes 5</option>
+                        <option value="Mes 6">Mes 6</option>
+                        <option value="Mes 7">Mes 7</option>
+                        <option value="Mes 8">Mes 8</option>
+                        <option value="Mes 9">Mes 9</option>
+                        <option value="Mes 10">Mes 10</option>
+                        <option value="Mes 11">Mes 11</option>
+                        <option value="Mes 12">Mes 12</option>
+                    </select>
+                    <button type="button" id="exportCertPdfBtn"
+                        style="padding:5px 12px; background:linear-gradient(135deg,#7c3aed,#8b5cf6); color:white; border:none; border-radius:6px; font-size:0.78rem; font-weight:600; cursor:pointer; white-space:nowrap;">
+                        📄 Exportar PDF
+                    </button>
+                    <button type="button" id="closeCertObrasBtn" class="close-btn">&times;</button>
+                </div>
+            </div>
+
+            <!-- Panel: Añadir nueva certificación (siempre visible arriba) -->
+            <div id="certObrasAddPanel" style="padding: 14px 20px; border-bottom: 2px solid var(--accent, #3b82f6); background: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(59,130,246,0.04));">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 1rem;">➕</span>
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">Nueva Certificación</span>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 4px;">Busca una partida, indica el mes y la cantidad</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 110px 130px auto; gap: 8px; align-items: end;">
+                    <!-- Buscador de partida -->
+                    <div>
+                        <label style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Partida</label>
+                        <div style="position: relative;">
+                            <input type="text" id="certObrasSearchInput" placeholder="Buscar por código o descripción..."
+                                autocomplete="off"
+                                style="width: 100%; padding: 7px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.82rem; background: var(--bg-color); color: var(--text-primary); outline: none; box-sizing: border-box;">
+                            <div id="certObrasDropdown" style="display:none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: var(--bg-color); border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 6px 6px; z-index: 100; box-shadow: 0 8px 20px rgba(0,0,0,0.12);"></div>
+                        </div>
+                        <div id="certObrasSelectedPartida" style="display:none; font-size: 0.75rem; color: #10b981; margin-top: 3px; font-weight: 600;"></div>
+                    </div>
+                    <!-- Mes -->
+                    <div>
+                        <label style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Mes</label>
+                        <select id="certObrasMonthSelect" style="width: 100%; padding: 7px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.82rem; background: var(--bg-color); color: var(--text-primary); outline: none;">
+                            <option value="Mes 1">Mes 1</option>
+                            <option value="Mes 2">Mes 2</option>
+                            <option value="Mes 3">Mes 3</option>
+                            <option value="Mes 4">Mes 4</option>
+                            <option value="Mes 5">Mes 5</option>
+                            <option value="Mes 6">Mes 6</option>
+                            <option value="Mes 7">Mes 7</option>
+                            <option value="Mes 8">Mes 8</option>
+                            <option value="Mes 9">Mes 9</option>
+                            <option value="Mes 10">Mes 10</option>
+                            <option value="Mes 11">Mes 11</option>
+                            <option value="Mes 12">Mes 12</option>
+                        </select>
+                    </div>
+                    <!-- Cantidad -->
+                    <div>
+                        <label style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">
+                            Cantidad <span id="certObrasUnitLabel" style="color: var(--accent); font-style: italic;"></span>
+                        </label>
+                        <input type="number" id="certObrasQtyInput" placeholder="0.00" step="any" min="0"
+                            style="width: 100%; padding: 7px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.82rem; background: var(--bg-color); color: var(--text-primary); outline: none; text-align: right; box-sizing: border-box;">
+                        <div id="certObrasQtyHint" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;"></div>
+                    </div>
+                    <!-- Botón Añadir -->
+                    <div>
+                        <button type="button" id="certObrasAddBtn"
+                            style="padding: 7px 16px; background: linear-gradient(135deg, #059669, #10b981); color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; height: 34px;">
+                            ✅ Certificar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Strip Global -->
+            <div id="certObrasKpiStrip" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border-color); background: var(--hover-bg, var(--bg-hover));"></div>
+            <!-- Barra de progreso global -->
+            <div style="padding: 10px 20px 8px; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Avance Global de Certificación</span>
+                    <span id="certObrasGlobalPct" style="font-size: 0.95rem; font-weight: 700; color: var(--accent);">0,0%</span>
+                </div>
+                <div style="height: 8px; background: var(--border-color); border-radius: 99px; overflow: hidden;">
+                    <div id="certObrasProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <!-- Tabla de partidas certificadas -->
+            <div class="modal-body" style="padding: 14px 20px; overflow-y: auto; flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 500;">Historial de certificaciones por partida</span>
+                    <input type="text" id="certObrasFilter" placeholder="Filtrar partidas..." autocomplete="off"
+                        style="padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.78rem; background: var(--bg-color); color: var(--text-primary); outline: none; width: 200px;">
+                </div>
+                <div style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                        <thead>
+                            <tr style="background: var(--hover-bg, var(--bg-hover)); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px;">
+                                <th style="padding: 10px 12px; text-align: left;">Código</th>
+                                <th style="padding: 10px 12px; text-align: left;">Partida</th>
+                                <th style="padding: 10px 8px; text-align: center;">Ud</th>
+                                <th style="padding: 10px 8px; text-align: right;">Cant. Presup.</th>
+                                <th style="padding: 10px 8px; text-align: right;">Certif. Acum.</th>
+                                <th style="padding: 10px 8px; text-align: right;">% Avance</th>
+                                <th style="padding: 10px 8px; text-align: right;">Imp. Certif.</th>
+                                <th style="padding: 10px 8px; text-align: right;">Imp. Total</th>
+                                <th style="padding: 10px 8px; width: 36px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="certObrasTableBody">
+                            <tr><td colspan="9" style="text-align:center; padding: 24px; color: var(--text-secondary); font-style: italic;">No hay certificaciones registradas</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -481,6 +737,7 @@ header("Pragma: no-cache");
                     <button type="button" id="ganttResetBtn" class="gantt-action-btn">↺ Reiniciar</button>
                     <button type="button" id="exportGanttExcelBtn" class="gantt-action-btn gantt-excel-btn">⬇ Excel</button>
                     <button type="button" id="exportGanttPdfBtn" class="gantt-action-btn gantt-pdf-btn">⬇ PDF</button>
+                    <button type="button" id="exportGanttXmlBtn" class="gantt-action-btn gantt-xml-btn" title="Exportar a Microsoft Project (XML)" style="background-color: #2563eb; color: white;">⬇ MS Project XML</button>
                     <button type="button" id="closePlanningBtn" class="gantt-close-btn">✕ Cerrar</button>
                 </div>
             </div>
@@ -500,7 +757,7 @@ header("Pragma: no-cache");
                 <div style="text-align: center; margin-bottom: 1.2rem;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.25rem;">ℹ️</div>
                     <h4 style="font-size: 1.2rem; margin: 0; color: var(--accent);">Visualizador BC3 Premium</h4>
-                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Versión 1.1.0</span>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Versión 1.2.0</span>
                 </div>
                 
                 <p style="font-size: 0.85rem; margin-bottom: 1rem;">Esta herramienta permite la importación, visualización y análisis interactivo de presupuestos en formato <strong>Standard FIEBDC-3 (.bc3)</strong>.</p>
@@ -521,10 +778,26 @@ header("Pragma: no-cache");
                 <details class="version-history-details" style="margin-top: 1.2rem;">
                     <summary>Historial de Versiones</summary>
                     <div class="version-history-body">
-                        <!-- Versión 1.1.0 -->
+                        <!-- Versión 1.2.0 -->
                         <div style="margin-bottom: 1rem; border-left: 3px solid var(--accent); padding-left: 8px;">
                             <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--text-primary);">
-                                <span>V1.1.0 (Actual)</span>
+                                <span>V1.2.0 (Actual)</span>
+                                <span>03/07/2026</span>
+                             </div>
+                             <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;">Autor: Jose Manuel Caamaño</div>
+                             <ul style="margin: 0; padding-left: 1rem; color: var(--text-secondary); font-size: 0.75rem;">
+                                 <li>Módulo de Certificaciones Mensuales de Obra para certificar cantidades y avances por partida.</li>
+                                 <li>Sincronización del progreso de tareas de Gantt basada en volúmenes certificados.</li>
+                                 <li>Curva S dinámica en base a certificaciones de obra y cantidades reales.</li>
+                                 <li>Indicador visual de Ruta Crítica en el árbol presupuestario con badge animado ⚡ CRÍTICO.</li>
+                                 <li>Auditoría de cambios en sesión (PEM total, variaciones e impacto económico neto).</li>
+                                 <li>Exportación del Diagrama de Gantt a formato estándar Microsoft Project XML.</li>
+                             </ul>
+                        </div>
+                        <!-- Versión 1.1.0 -->
+                        <div style="margin-bottom: 1rem; border-left: 3px solid var(--border-color); padding-left: 8px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--text-primary);">
+                                <span>V1.1.0</span>
                                 <span>03/07/2026</span>
                              </div>
                              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;">Autor: Jose Manuel Caamaño</div>
@@ -622,6 +895,54 @@ header("Pragma: no-cache");
                         <button type="submit" id="submitAddPartidaBtn" class="process-btn" style="padding: 8px 16px; margin: 0;">Aceptar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Log Modal (Auditoría de Cambios) -->
+    <div id="auditModal" class="modal" style="display:none;">
+        <div class="modal-content info-modal-content" style="max-width: 750px; width: 90%;">
+            <header class="modal-header">
+                <h3>📜 Auditoría de Cambios del Presupuesto</h3>
+                <button type="button" id="closeAuditBtn" class="close-btn">&times;</button>
+            </header>
+            <div class="modal-body" style="padding: 16px;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; margin-top: 0;">
+                    Registro en tiempo real de las modificaciones realizadas en la sesión actual e impacto económico estimado en el PEM total.
+                </p>
+                <!-- KPI Impact Card -->
+                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <div style="flex: 1; background: var(--hover-bg, var(--bg-hover)); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; text-align: center;">
+                        <span style="display: block; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Desviación PEM Acumulada</span>
+                        <span id="auditTotalDeviation" style="display: block; font-size: 1.4rem; font-weight: bold; margin-top: 4px; color: var(--text-primary);">0,00 €</span>
+                    </div>
+                    <div style="flex: 1; background: var(--hover-bg, var(--bg-hover)); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; text-align: center;">
+                        <span style="display: block; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Modificaciones Realizadas</span>
+                        <span id="auditChangesCount" style="display: block; font-size: 1.4rem; font-weight: bold; margin-top: 4px; color: var(--text-primary);">0</span>
+                    </div>
+                </div>
+                <!-- Audit Table -->
+                <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+                        <thead>
+                            <tr style="background: var(--hover-bg, var(--bg-hover)); border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-weight: 600;">
+                                <th style="padding: 10px; width: 80px;">Hora</th>
+                                <th style="padding: 10px; width: 110px;">Partida</th>
+                                <th style="padding: 10px;">Descripción del Cambio</th>
+                                <th style="padding: 10px; width: 140px; text-align: right;">Impacto PEM</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody" style="color: var(--text-secondary);">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 24px; font-style: italic;">No se han realizado modificaciones en esta sesión</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                    <button type="button" id="clearAuditLogBtn" class="gantt-action-btn" style="background: none; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 6px 12px;">Limpiar Historial</button>
+                    <button type="button" id="closeAuditOkBtn" class="process-btn" style="padding: 6px 16px; margin: 0;">Aceptar</button>
+                </div>
             </div>
         </div>
     </div>

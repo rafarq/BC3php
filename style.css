@@ -2912,6 +2912,277 @@ body.dark-theme .badge-partida-new {
     to { transform: rotate(360deg); transform-origin: center; }
 }
 
+/* --- ESTILOS RUTA CRÍTICA EN EL ÁRBOL --- */
+.tree-node-row--critical {
+    border-left: 4px solid #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.03) !important;
+}
+body.dark-theme .tree-node-row--critical {
+    background-color: rgba(239, 68, 68, 0.06) !important;
+}
 
+.badge-critical-tree {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    margin-left: 6px;
+    display: inline-block;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+    animation: critical-pulse 2s infinite alternate;
+}
+body.dark-theme .badge-critical-tree {
+    background-color: rgba(185, 28, 28, 0.2);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.4);
+}
 
+@keyframes critical-pulse {
+    from { transform: scale(1); opacity: 0.9; }
+    to { transform: scale(1.03); opacity: 1; }
+}
+
+/* --- ESTILOS DE LA AUDITORÍA DE CAMBIOS --- */
+.right-controls .audit-log-btn:hover {
+    transform: scale(1.15);
+}
+.right-controls .audit-log-btn:active {
+    transform: scale(0.95);
+}
+
+/* --- ESTILOS DE TABLAS DE CERTIFICACIÓN Y AUDITORÍA --- */
+#auditTableBody tr:hover, #certTableBody tr:hover {
+    background-color: var(--hover-bg, rgba(59, 130, 246, 0.03));
+}
+#auditTableBody td, #certTableBody td {
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* --- BOTÓN CERTIFICACIONES DE OBRA (Barra superior) --- */
+.cert-obras-btn {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #fff;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(16, 185, 129, 0.25);
+}
+
+.cert-obras-btn:hover {
+    background: linear-gradient(135deg, #047857, #059669);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    transform: translateY(-1px);
+}
+
+.cert-obras-btn:active {
+    transform: translateY(0);
+}
+
+/* Modo oscuro */
+.dark-theme .cert-obras-btn {
+    box-shadow: 0 1px 4px rgba(16, 185, 129, 0.35);
+}
+
+/* Filas de la tabla de certificaciones globales */
+.cert-obras-row:hover {
+    background-color: var(--hover-bg, rgba(16, 185, 129, 0.04)) !important;
+    cursor: pointer;
+}
+
+/* =============================================================================
+   PANEL DE CAPÍTULOS
+   ============================================================================= */
+.chapters-btn {
+    background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+    color: #fff;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(124, 58, 237, 0.25);
+}
+.chapters-btn:hover {
+    background: linear-gradient(135deg, #6d28d9, #7c3aed);
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+    transform: translateY(-1px);
+}
+.chapters-btn:active { transform: translateY(0); }
+.dark-theme .chapters-btn { box-shadow: 0 1px 4px rgba(139, 92, 246, 0.35); }
+
+.chapters-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    background: var(--bg-color);
+}
+.chapters-table-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 0 24px 24px;
+}
+.chapters-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    min-width: 860px;
+}
+.chapters-table thead tr {
+    background: var(--table-header-bg, #f1f5f9);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.chapters-table th, .chapters-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.chapters-table tbody tr:hover {
+    background: var(--hover-bg);
+}
+.chapters-table .chapter-code {
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+.chapters-table .chapter-summary {
+    color: var(--text-primary);
+    font-weight: 500;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.chapters-table .chapter-amount {
+    text-align: right;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.chapters-table .chapter-pct {
+    text-align: right;
+    color: var(--accent);
+    font-weight: 600;
+}
+.resource-bar-container {
+    display: flex;
+    height: 14px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: var(--border-color);
+    gap: 0;
+}
+.resource-bar-segment { height: 100%; transition: width 0.4s ease; }
+.rb-mo  { background: #3b82f6; }
+.rb-mat { background: #f59e0b; }
+.rb-maq { background: #10b981; }
+.rb-sub { background: #8b5cf6; }
+.rb-etc { background: #94a3b8; }
+.chapters-table .res-val {
+    text-align: right;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* =============================================================================
+   ESTILOS DE IMPRESIÓN — PDF de Certificaciones
+   ============================================================================= */
+@media print {
+    body > * { display: none !important; }
+    #certPrintArea { display: block !important; }
+}
+
+#certPrintArea {
+    display: none;
+    font-family: 'Inter', 'Arial', sans-serif;
+    font-size: 11pt;
+    color: #0f172a;
+    padding: 0;
+}
+#certPrintArea .cert-print-header {
+    border-bottom: 3px solid #0ea5e9;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+}
+#certPrintArea .cert-print-title {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #0ea5e9;
+    margin: 0 0 4px;
+}
+#certPrintArea .cert-print-meta {
+    font-size: 9pt;
+    color: #64748b;
+}
+#certPrintArea table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin-bottom: 16px;
+}
+#certPrintArea th {
+    background: #f1f5f9;
+    color: #334155;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+#certPrintArea td {
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+#certPrintArea tr:nth-child(even) td { background: #f8fafc; }
+#certPrintArea .cert-print-total-row td {
+    background: #e0f2fe;
+    font-weight: 700;
+    border-top: 2px solid #0ea5e9;
+}
+#certPrintArea .cert-print-footer {
+    margin-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    color: #64748b;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 12px;
+}
+#certPrintArea .sign-box {
+    border: 1px solid #cbd5e1;
+    width: 200px;
+    height: 60px;
+    text-align: center;
+    padding: 8px;
+    font-size: 8pt;
+    color: #94a3b8;
+}
 

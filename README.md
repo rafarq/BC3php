@@ -188,7 +188,15 @@ Todas las librerias JS se sirven **localmente**, sin dependencia de CDN externos
 
 ## Historial de Versiones
 
-### Version 1.1.0 — 03/07/2026 (Actual)
+### Version 1.2.0 — 03/07/2026 (Actual)
+* **Certificaciones Mensuales de Obra:** Módulo interactivo en el panel de detalles para certificar cantidades mes a mes (Mes 1 al Mes 12) sobre cada partida, calculando acumulados, importes y porcentajes de avance certificados.
+* **Sincronización Gantt y Avances:** El avance (%) de cada tarea se sincroniza automáticamente con el volumen acumulado certificado, actualizando dinámicamente las barras de progreso del diagrama de Gantt.
+* **Curva S Dinámica:** La línea de "Ejecutado" en la Curva S ahora se calcula de manera exacta a partir de las certificaciones reales registradas por semanas, sustituyendo la estimación lineal del Gantt.
+* **Ruta Crítica en el Árbol:** Resaltado de capítulos y partidas pertenecientes a la ruta crítica con bordes rojos, sombreados suaves y un badge distintivo animado `⚡ CRÍTICO` al lado del código.
+* **Auditoría de Cambios y Desviación PEM:** Registro en tiempo real de cada edición de precios, resúmenes o creación de partidas, computando la desviación acumulada neta sobre el presupuesto PEM.
+* **Exportador a MS Project XML:** Exportación directa del planning a archivos XML estructurados compatibles con Microsoft Project y Primavera, conservando predecesoras y OutlineLevels.
+
+### Version 1.1.0 — 03/07/2026
 * **Creacion de Partidas en el Arbol:** Boton "➕ Nueva Partida" en el encabezado de la columna Codigo para crear filas borrador directamente en el arbol visual.
 * **Control Jerarquico de Posicionamiento:** Botonera de direccion (▲/▼/◀/▶) para mover el borrador en altura o profundidad (anidar dentro de capitulos).
 * **Validacion y Resaltado:** Validacion obligatoria de Resumen, Cantidad y Precio con bordes de error rojos en inputs e importe calculado en tiempo real.
