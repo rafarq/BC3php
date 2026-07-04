@@ -10,33 +10,50 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 
 ---
 
-## [0.2.0] — 2026-07-03
+## [1.3.0] — 2026-07-03
 
 ### Añadido
-- `CONTRIBUTING.md` con guía de instalación, ejecución y envío de PRs.
-- `SECURITY.md` con política de reporte de vulnerabilidades.
-- `CODE_OF_CONDUCT.md` basado en Contributor Covenant 1.4.
-- `CHANGELOG.md` (este fichero).
-- Modo oscuro con alternancia claro/oscuro y estilos adaptados en todos los módulos, incluido el Gantt.
-- Edición en línea de resúmenes y precios unitarios desde la propia tabla, con historial de deshacer/rehacer (Ctrl+Z / Ctrl+Y) y guardado del BC3 modificado.
-- Dashboard de análisis visual con gráficos de distribución por capítulos y por tipo de recurso, y estadísticas globales del presupuesto.
-- Panel de coeficientes globales (PEM a PEC): Gastos Generales, Beneficio Industrial y Baja/Alza general, con cálculo automático del PEC en tiempo real.
-- Comparador de presupuestos: carga de un segundo archivo BC3 y comparación partida a partida con desviaciones de precio resaltadas.
-- Exportación a PDF (tabla formateada y totales) y a Excel (`.xlsx`), generada localmente sin dependencias externas.
-- Planning – diagrama de Gantt interactivo generado a partir de capítulos y subcapítulos (hasta 3 niveles), con distribución automática de fechas, barras arrastrables, capítulos colapsables y auto-guardado en `localStorage`.
-- Capturas de pantalla de las funcionalidades del proyecto en la carpeta `CAPTURAS/`, junto con ejemplos de presupuesto exportado en PDF y Excel.
-- Procesado automático del archivo `.bc3` al seleccionarlo, sin necesidad de pulsar manualmente el botón `Procesar`.
-- Iconos SVG inline de estilo Lucide para acciones de dashboard, planning, exportación, tema, coeficientes, deshacer/rehacer, cierres de modal y controles del Gantt.
-- Estilos globales para enlaces (`a`) y botones deshabilitados, con nuevas variables de contraste (`--accent-contrast`, `--link-color`, `--link-hover`) adaptadas a modo claro y oscuro.
+- Nueva columna "PROPORCIÓN" en la pestaña PRESUPUESTO que agrupa el % PEM y la composición de recursos (MO/MAT/MAQ/SUB/Etc) en los capítulos.
+- Cabecera compacta y adaptativa con menú de ajustes unificado en engranaje ⚙️ (Coeficientes, Auditoría, Tema, Info).
+- Botón pulsante "🚀 CARGAR ARCHIVO .BC3" en la pantalla de bienvenida con brillo/aura y carga automática en un solo clic.
+- Panel de estadísticas del Planning Gantt (PEM, certificado, restante, días de obra restantes y promedios diarios/semanales/mensuales requeridos).
+- Sincronización de versión general a V1.3.0 en pie de página e información.
 
-### Cambiado
-- Sustituidos emojis y símbolos sueltos de la interfaz por iconos SVG locales sin dependencias externas.
-- Centralizada la lógica de carga de BC3 para que el selector de archivo, el botón manual y el arrastre de archivos usen el mismo flujo de procesado.
-- Actualizado el pie de página con el crédito a Rafael Roa como coautor junto a Jose Manuel Caamaño, y ajustada la versión mostrada a V0.2.0.
-- Eliminado el subrayado en el hover de los elementos del breadcrumb para un estilo más limpio.
+---
 
-### Corregido
-- Corregidos selectores CSS del modo oscuro (`.dark-mode` → `body.dark-theme`) que impedían aplicar los estilos oscuros a filas, celdas y columnas del diagrama de Gantt.
+## [1.2.0] — 2026-07-03
+
+### Añadido
+- Módulo de Certificaciones Mensuales de Obra para registrar cantidades mes a mes.
+- Sincronización del progreso de tareas de Gantt en base a volúmenes certificados reales.
+- Curva S acumulada real basada en certificaciones mensuales.
+- Resaltado de Ruta Crítica en el árbol con badge animado `⚡ CRÍTICO`.
+- Historial de Auditoría de Cambios con desglose de variaciones y desviación del PEM neta.
+- Exportación optimizada a PDF A4 de certificaciones mensuales con sección de firmas.
+- Exportación del planning a formato estándar XML de Microsoft Project.
+
+---
+
+## [1.1.0] — 2026-07-03
+
+### Añadido
+- Botón "➕ Nueva Partida" para añadir borradores inline directamente en el árbol.
+- Botonera jerárquica de dirección (▲/▼/◀/▶) para estructurar nuevas partidas creadas.
+- Enlaces de dependencias Fin→Inicio en el Gantt con reprogramación en cascada y botón de borrado rápido "×".
+- Buscador Global (Ctrl+F) incremental con resaltado y navegación arriba/abajo.
+- Curva S de avance teórico en el Dashboard.
+
+---
+
+## [1.0.0] — 2026-07-03
+
+### Añadido
+- Reorganización de la cabecera original en grupos de control.
+- Rediseño visual de las tarjetas PEM y PEC.
+- Dashboard técnico integrado con 6 gráficos interactivos.
+- Diagrama Gantt interactivo con ruta crítica y línea de hoy.
+- Menú lateral de información (ℹ️) e historial de versiones.
+- Alternador de modo claro / modo oscuro adaptativo.
 
 ---
 
@@ -53,9 +70,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 - `README.md` con guía de instalación y uso.
 
 ### Corregido
-- Eliminación del carácter `#` al final de códigos de concepto y partida.
+- Detección de capitulo para eliminar el carácter `#` al final de códigos de concepto y partida.
 - Limpieza de símbolos `#` y espacios sobrantes en los campos de texto mostrados.
 
-[Unreleased]: https://github.com/rafarq/BC3php/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/rafarq/BC3php/compare/v0.1.0...v0.2.0
+[Unreleased]: https://github.com/rafarq/BC3php/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/rafarq/BC3php/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/rafarq/BC3php/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/rafarq/BC3php/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/rafarq/BC3php/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/rafarq/BC3php/releases/tag/v0.1.0
+
