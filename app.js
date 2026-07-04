@@ -1717,18 +1717,7 @@ function showDetails(code) {
         }
     }
 
-    // Mediciones en Panel de Escritorio
-    const msSection = document.getElementById('detMeasurementsSection');
-    const msDiv = document.getElementById('detMeasurements');
-    if (msSection && msDiv) {
-        if (concept.measurements && concept.measurements.length > 0) {
-            msSection.style.display = 'block';
-            msDiv.innerHTML = '';
-            msDiv.appendChild(createMeasurementTable(concept.measurements, concept));
-        } else {
-            msSection.style.display = 'none';
-        }
-    }
+
 
     // Decomposition Table
     const tbody = document.getElementById('detDecomposition');
