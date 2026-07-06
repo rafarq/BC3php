@@ -15,17 +15,39 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 ### Añadido
 
 - Enlaces de pie de página al roadmap público y al changelog renderizado en HTML desde `CHANGELOG.md`.
+- Presupuesto BC3 de prueba (`presupuesto-prueba.bc3`) cargable desde el botón `Cargar presupuesto de prueba`.
+- Logo real de BC3php en la cabecera mediante `bc3logo.png`.
+- Enlace visible en el pie al fichero `LICENSE`, mostrando la licencia real del proyecto: GNU Affero General Public License v3.0.
+- Hoja de estilos de impresión (`@media print`) para obtener una vista limpia del presupuesto desde el navegador.
+- Estados de feedback mediante notificaciones para guardar, exportar y aplicar coeficientes.
+- Estado visual de procesado para ficheros BC3 grandes.
+- Navegación móvil tipo iPod para recorrer capítulos y partidas por niveles, con transición lateral y barra superior de vuelta.
+- Edición móvil por pulsación larga en textos editables, manteniendo el doble clic como mecanismo de edición en escritorio.
 
 ### Cambiado
 
 - La edición inline de resúmenes, precios, descripciones y líneas de medición se activa con doble clic, y las descripciones editadas se guardan en el BC3 modificado.
+- La cabecera móvil agrupa las acciones secundarias en un menú desplegable y deja visibles las acciones principales de archivo.
 - Actualizado el pie de página a V0.3.0 con crédito a System Arquitectura.
 - Consolidada la política del changelog para registrar las mejoras del mismo día dentro de una única entrada fechada, evitando duplicados por fecha.
+- Reorganizada y normalizada la cabecera con grupos de acciones, botones consistentes y mejor comportamiento responsive.
+- Mejorada la legibilidad de las tablas con números tabulares, filas alternas, estados hover/activo y jerarquía visual más clara.
+- Renovado el estado vacío inicial con mensaje de onboarding, carga por arrastre y acceso al presupuesto de prueba.
+- Consolidado el sistema visual con tokens de espaciado, radios, sombras, tipografía, transiciones y foco visible.
+- Ajustados los gráficos del dashboard para usar una paleta coherente con los tipos de recurso, tooltips y formato monetario.
+- Mejorados los modales de Dashboard, Comparar y Planning con backdrop, animación, cierre por `Esc` y clic exterior.
+- Pulido el Gantt con tooltip completo, sombreado alterno, línea de hoy y cabecera integrada en la paleta.
+- Refinados scrollbars, sombras de superficies fijas, footer y comportamiento móvil.
+- Convertido el modo oscuro a negro real, con superficies casi negras y el logotipo filtrado a blanco completo.
+- Actualizada la whitelist de `subir.sh` para incluir `LICENSE`, `bc3logo.png` y el BC3 de prueba.
 
 ### Corregido
 
 - Corregido el guardado de BC3 modificados para que los archivos exportados puedan volver a abrirse en la propia app sin perder jerarquía, importes ni factores de descomposición.
 - Corregido el scroll de la vista pública del changelog en `changelog.php`, que quedaba bloqueado por el layout fijo del visor principal.
+- Corregido el botón móvil de `Coeficientes`, que no abría el panel cuando este conservaba la clase `is-hidden`.
+- Bloqueado el zoom accidental en pantallas pequeñas, incluido el zoom al enfocar textos editables y campos de formulario.
+- Corregida la prioridad de ocultación de acciones móviles para que los botones solo aparezcan cuando el presupuesto ya está cargado.
 
 ---
 

@@ -1,3 +1,5 @@
 .DS_Store
 *.bc3
+!presupuesto-prueba.bc3
 subir.sh
+mejoras*

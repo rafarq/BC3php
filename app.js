@@ -7,6 +7,7 @@ const UI_ICONS = {
     'file-spreadsheet': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M10 9H8"/></svg>',
     'file-text': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
     'folder-up': '<svg viewBox="0 0 24 24"><path d="M12 10v6"/><path d="m9 13 3-3 3 3"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
+    'menu': '<svg viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>',
     'moon': '<svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z"/></svg>',
     'redo-2': '<svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>',
     'rotate-ccw': '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
@@ -53,33 +54,130 @@ function selectElementContents(el) {
 
 function enableDoubleClickEditing(el, options = {}) {
     const { selectOnEdit = false } = options;
+    let longPressTimer = null;
+    let longPressStart = null;
+    let suppressNextClick = false;
+
+    const clearLongPressTimer = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        longPressStart = null;
+    };
+
+    const enterEditMode = () => {
+        el.contentEditable = 'true';
+        el.classList.add('is-editing');
+        el.focus();
+        if (selectOnEdit) {
+            selectElementContents(el);
+        }
+    };
+
     el.contentEditable = 'false';
     el.classList.add('inline-editable');
     el.title = el.title || 'Doble clic para editar';
 
     el.addEventListener('click', (e) => {
+        if (isMobileMode()) {
+            if (suppressNextClick || el.isContentEditable) {
+                e.preventDefault();
+                e.stopPropagation();
+                suppressNextClick = false;
+            }
+            return;
+        }
         e.stopPropagation();
     });
 
     el.addEventListener('dblclick', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        el.contentEditable = 'true';
-        el.focus();
-        if (selectOnEdit) {
-            selectElementContents(el);
+        if (isMobileMode()) return;
+        enterEditMode();
+    });
+
+    el.addEventListener('pointerdown', (e) => {
+        if (!isMobileMode() || e.pointerType === 'mouse' || el.isContentEditable) return;
+        longPressStart = { x: e.clientX, y: e.clientY };
+        longPressTimer = setTimeout(() => {
+            suppressNextClick = true;
+            enterEditMode();
+        }, 520);
+    });
+
+    el.addEventListener('pointermove', (e) => {
+        if (!longPressStart) return;
+        const dx = Math.abs(e.clientX - longPressStart.x);
+        const dy = Math.abs(e.clientY - longPressStart.y);
+        if (dx > 8 || dy > 8) {
+            clearLongPressTimer();
         }
+    });
+
+    el.addEventListener('pointerup', clearLongPressTimer);
+    el.addEventListener('pointercancel', clearLongPressTimer);
+    el.addEventListener('pointerleave', clearLongPressTimer);
+
+    el.addEventListener('contextmenu', (e) => {
+        if (!isMobileMode()) return;
+        e.preventDefault();
     });
 
     el.addEventListener('blur', () => {
         el.contentEditable = 'false';
+        el.classList.remove('is-editing');
     });
 }
 
 document.querySelectorAll('[data-icon], [data-icon-only]').forEach(applyIcon);
 
+const uploadForm = document.getElementById('uploadForm');
+const mobileActionsToggle = document.getElementById('mobileActionsToggle');
+const headerActionsMenu = document.getElementById('headerActionsMenu');
+
+function setSelectedFileName(name) {
+    document.querySelectorAll('.file-name-label').forEach(label => {
+        label.textContent = name;
+    });
+}
+
+function closeHeaderActionsMenu() {
+    if (!uploadForm || !mobileActionsToggle) return;
+    uploadForm.classList.remove('actions-open');
+    mobileActionsToggle.setAttribute('aria-expanded', 'false');
+}
+
+if (uploadForm && mobileActionsToggle && headerActionsMenu) {
+    mobileActionsToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = uploadForm.classList.toggle('actions-open');
+        mobileActionsToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    headerActionsMenu.addEventListener('click', (e) => {
+        if (e.target.closest('button')) {
+            closeHeaderActionsMenu();
+        }
+    });
+
+    window.addEventListener('click', (e) => {
+        if (!uploadForm.contains(e.target)) {
+            closeHeaderActionsMenu();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeHeaderActionsMenu();
+        }
+    });
+}
+
 // 1. File Input Change
 const fileInput = document.getElementById('bc3file');
+const EXAMPLE_BC3_FILE = 'presupuesto-prueba.bc3';
 let currentFileName = "presupuesto.bc3";
 let isProcessingFile = false;
 if (fileInput) {
@@ -87,8 +185,34 @@ if (fileInput) {
         if (this.files && this.files.length > 0) {
             const file = this.files[0];
             currentFileName = file.name;
-            document.getElementById('fileName').textContent = currentFileName;
-            processBc3File(file);
+            setSelectedFileName(currentFileName);
+            processBc3File(file, uploadForm ? uploadForm.querySelector('.process-btn') : null);
+        }
+    });
+}
+
+const loadExampleBtn = document.getElementById('loadExampleBtn');
+if (loadExampleBtn) {
+    loadExampleBtn.addEventListener('click', async () => {
+        const originalHtml = loadExampleBtn.innerHTML;
+        try {
+            loadExampleBtn.disabled = true;
+            loadExampleBtn.textContent = 'Cargando...';
+
+            const response = await fetch(EXAMPLE_BC3_FILE, { cache: 'no-store' });
+            if (!response.ok) throw new Error('No se ha podido cargar el presupuesto de ejemplo');
+
+            const blob = await response.blob();
+            const exampleFile = new File([blob], EXAMPLE_BC3_FILE, { type: 'text/plain' });
+            currentFileName = exampleFile.name;
+            setSelectedFileName(currentFileName);
+            await processBc3File(exampleFile, loadExampleBtn);
+        } catch (err) {
+            console.error(err);
+            alert('No se ha podido cargar el presupuesto de ejemplo.');
+        } finally {
+            loadExampleBtn.innerHTML = originalHtml;
+            loadExampleBtn.disabled = false;
         }
     });
 }
@@ -114,8 +238,7 @@ window.addEventListener('resize', function () {
 });
 
 // 3. Upload Form Submit
-const uploadForm = document.getElementById('uploadForm');
-async function processBc3File(file) {
+async function processBc3File(file, triggerBtn = null) {
     if (!file || isProcessingFile) return;
 
     if (!file.name.toLowerCase().endsWith('.bc3')) {
@@ -124,11 +247,12 @@ async function processBc3File(file) {
     }
 
     isProcessingFile = true;
+    document.body.classList.add('is-processing');
 
     const formData = new FormData();
     formData.append('bc3file', file);
 
-    const btn = uploadForm ? uploadForm.querySelector('.process-btn') : document.querySelector('.process-btn');
+    const btn = triggerBtn || (uploadForm ? uploadForm.querySelector('.process-btn') : document.querySelector('.process-btn'));
     const originalText = btn ? btn.textContent : 'Procesar';
     if (btn) {
         btn.textContent = 'Procesando...';
@@ -157,6 +281,7 @@ async function processBc3File(file) {
             btn.disabled = false;
         }
         isProcessingFile = false;
+        document.body.classList.remove('is-processing');
     }
 }
 
@@ -170,7 +295,7 @@ if (uploadForm) {
             return;
         }
 
-        processBc3File(fileInput.files[0]);
+        processBc3File(fileInput.files[0], uploadForm.querySelector('.process-btn'));
     });
 }
 
@@ -192,6 +317,7 @@ let chaptersChartInstance = null;
 // Drill-down navigation state
 let navigationStack = []; // Stack of { code, title } objects
 let currentLevel = null; // null = root level, or code of current parent
+let mobileNavDirection = 'forward';
 
 // Obtener la descomposición de un concepto con factores
 function getConceptDecomposition(concept) {
@@ -210,50 +336,35 @@ function isMobileMode() {
     return window.innerWidth <= 768;
 }
 
+function getCurrentMobileTitle() {
+    if (navigationStack.length === 0) return 'Presupuesto';
+    return navigationStack[navigationStack.length - 1].title || 'Nivel actual';
+}
+
 // Update breadcrumb display
 function updateBreadcrumbs() {
     const container = document.getElementById('breadcrumbContainer');
     const path = document.getElementById('breadcrumbPath');
     const backBtn = document.getElementById('breadcrumbBack');
 
-    if (!isMobileMode() || navigationStack.length === 0) {
+    if (!isMobileMode() || !parsedData) {
+        container.classList.add('is-hidden');
         container.style.display = 'none';
         return;
     }
 
-    container.style.display = 'flex';
+    container.classList.remove('is-hidden');
+    container.style.display = isMobileMode() ? 'grid' : 'flex';
     path.innerHTML = '';
-
-    // Add root
-    const rootItem = document.createElement('span');
-    rootItem.className = 'breadcrumb-item';
-    rootItem.textContent = 'Inicio';
-    rootItem.onclick = () => navigateToLevel(null);
-    path.appendChild(rootItem);
-
-    // Add navigation stack items
-    navigationStack.forEach((item, index) => {
-        const separator = document.createElement('span');
-        separator.className = 'breadcrumb-separator';
-        separator.textContent = '›';
-        path.appendChild(separator);
-
-        const breadcrumbItem = document.createElement('span');
-        breadcrumbItem.className = index === navigationStack.length - 1 ? 'breadcrumb-current' : 'breadcrumb-item';
-        breadcrumbItem.textContent = item.title;
-
-        if (index < navigationStack.length - 1) {
-            breadcrumbItem.onclick = () => navigateToLevel(item.code);
-        }
-
-        path.appendChild(breadcrumbItem);
-    });
+    path.textContent = getCurrentMobileTitle();
 
     // Back button handler
+    backBtn.hidden = navigationStack.length === 0;
     backBtn.onclick = () => {
         if (navigationStack.length > 0) {
             navigationStack.pop();
             const newLevel = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1].code : null;
+            mobileNavDirection = 'back';
             navigateToLevel(newLevel, false); // false = don't push to stack
         }
     };
@@ -261,6 +372,10 @@ function updateBreadcrumbs() {
 
 // Navigate to a specific level
 function navigateToLevel(parentCode, pushToStack = true) {
+    if (isMobileMode() && parentCode === null) {
+        mobileNavDirection = 'back';
+    }
+
     currentLevel = parentCode;
 
     // Update stack
@@ -296,6 +411,17 @@ function renderCurrentLevel() {
         treeContainer.classList.remove('mobile-drilldown');
     }
 
+    const mobileMode = isMobileMode();
+    const renderHost = mobileMode ? document.createElement('div') : treeContainer;
+
+    if (mobileMode) {
+        const stage = document.createElement('div');
+        stage.className = 'ipod-stage';
+        renderHost.className = `ipod-panel ipod-panel-${mobileNavDirection}`;
+        stage.appendChild(renderHost);
+        treeContainer.appendChild(stage);
+    }
+
     // Create Header
     const header = document.createElement('div');
     header.className = 'tree-header';
@@ -307,12 +433,12 @@ function renderCurrentLevel() {
         <div>Precio</div>
         <div>Importe</div>
     `;
-    treeContainer.appendChild(header);
+    renderHost.appendChild(header);
 
     const rootList = document.createElement('div');
     rootList.className = 'tree-roots';
 
-    if (isMobileMode()) {
+    if (mobileMode) {
         // Mobile: Show only current level
         if (currentLevel === null) {
             // Show root nodes
@@ -348,7 +474,7 @@ function renderCurrentLevel() {
         });
     }
 
-    treeContainer.appendChild(rootList);
+    renderHost.appendChild(rootList);
 
     // Re-apply filter if exists
     const searchTerm = (document.getElementById('searchTerm')?.value || '').trim();
@@ -356,7 +482,9 @@ function renderCurrentLevel() {
         filterTree(searchTerm);
     }
 
+    updateBreadcrumbs();
     updateExpandAllButtonState();
+    mobileNavDirection = 'forward';
 }
 
 
@@ -438,12 +566,16 @@ function renderApp(data) {
     const exportDrop = document.getElementById('exportDropdown');
     const cBtn = document.getElementById('compareBtn');
     const dBtn = document.getElementById('dashboardBtn');
-    if (sBtn) sBtn.style.display = 'inline-block';
-    if (exportDrop) exportDrop.style.display = 'inline-block';
-    if (cBtn) cBtn.style.display = 'inline-block';
-    if (dBtn) dBtn.style.display = 'inline-block';
+    [sBtn, exportDrop, cBtn, dBtn].forEach(el => {
+        if (!el) return;
+        el.classList.remove('is-hidden');
+        el.style.display = 'inline-block';
+    });
     const pBtn = document.getElementById('planningBtn');
-    if (pBtn) pBtn.style.display = 'inline-block';
+    if (pBtn) {
+        pBtn.classList.remove('is-hidden');
+        pBtn.style.display = 'inline-block';
+    }
 
     // Resetear comparador y coeficientes al cargar un nuevo presupuesto
     compareData = null;
@@ -453,7 +585,10 @@ function renderApp(data) {
     const totalPecDisplay = document.getElementById('budgetTotalPEC');
     if (totalPecDisplay) totalPecDisplay.style.display = 'none';
     const toggleCoeffs = document.getElementById('toggleCoeffsBtn');
-    if (toggleCoeffs) toggleCoeffs.style.display = 'inline-block';
+    if (toggleCoeffs) {
+        toggleCoeffs.classList.remove('is-hidden');
+        toggleCoeffs.style.display = 'inline-block';
+    }
     const coeffsPanel = document.getElementById('coeffsPanel');
     if (coeffsPanel) coeffsPanel.style.display = 'none';
 
@@ -467,6 +602,11 @@ function renderApp(data) {
     globalCoeffs = { gg: 13, bi: 6, baja: 0 };
 
     // Mostrar barra de filtros
+    const searchBar = document.getElementById('searchBarContainer');
+    if (searchBar) {
+        searchBar.classList.remove('is-hidden');
+        searchBar.style.display = 'block';
+    }
     const filterBar = document.getElementById('filterBar');
     if (filterBar) filterBar.style.display = 'flex';
 
@@ -506,12 +646,16 @@ function renderApp(data) {
             stats.textContent = `Cargado: ${conceptCount} partidas | Raíces: ${rootCount}`;
         }
 
+        info.classList.remove('is-hidden');
         info.style.display = 'block';
     }
 
     // Hide empty state
     const emptyState = document.querySelector('#treePanel .empty-state');
-    if (emptyState) emptyState.style.display = 'none';
+    if (emptyState) {
+        emptyState.classList.add('is-hidden');
+        emptyState.style.display = 'none';
+    }
 
     try {
         // Render using new navigation system
@@ -1162,7 +1306,7 @@ function createMeasurementTable(measurements, concept = null) {
     const trTotal = document.createElement('tr');
     trTotal.className = 'total-row';
     trTotal.innerHTML = `
-        <td colspan="5" style="text-align: right;">TOTAL:</td>
+        <td colspan="5" class="text-right">TOTAL:</td>
         <td class="numeric"><b>${total.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}</b></td>
     `;
     tbody.appendChild(trTotal);
@@ -1320,7 +1464,7 @@ function showDetails(code) {
         });
     } else {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="5" style="text-align:center; color: #94a3b8;">Sin descomposición (Partida simple o Capítulo)</td>`;
+        row.innerHTML = `<td colspan="5" class="table-empty-cell">Sin descomposición (Partida simple o Capítulo)</td>`;
         tbody.appendChild(row);
     }
 
@@ -1392,7 +1536,10 @@ function updateTotalBudgetDisplay() {
         totalEl.textContent = `PEM: ${pem.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
         
         // Mostrar botón de coeficientes
-        if (toggleCoeffsBtn) toggleCoeffsBtn.style.display = 'inline-block';
+        if (toggleCoeffsBtn) {
+            toggleCoeffsBtn.classList.remove('is-hidden');
+            toggleCoeffsBtn.style.display = 'inline-block';
+        }
         
         // Calcular PEC
         const gg = globalCoeffs.gg / 100;
@@ -1405,6 +1552,7 @@ function updateTotalBudgetDisplay() {
         
         if (totalPecEl) {
             totalPecEl.textContent = `PEC: ${pec.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+            totalPecEl.classList.remove('is-hidden');
             totalPecEl.style.display = 'inline-block';
         }
     }
@@ -1595,6 +1743,8 @@ if (saveBtn) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        showNotification('Archivo BC3 guardado');
     });
 }
 
@@ -1809,6 +1959,7 @@ function exportToPdf() {
     // Guardar/Descargar el PDF
     const baseName = currentFileName.replace(/\.[^/.]+$/, "");
     doc.save(`${baseName}_presupuesto.pdf`);
+    showNotification('PDF exportado');
 }
 
 // Modo Oscuro
@@ -2036,9 +2187,25 @@ function exportToExcel() {
     // Guardar/Descargar el Excel
     const baseName = currentFileName.replace(/\.[^/.]+$/, "");
     XLSX.writeFile(wb, `${baseName}_presupuesto.xlsx`);
+    showNotification('Excel exportado');
 }
 
 // 4. Lógica de Dashboard y Gráficos
+const RESOURCE_CHART_COLORS = {
+    MO: '#ef4444',
+    MAQ: '#d97706',
+    MAT: '#3b82f6',
+    SUB: '#a855f7'
+};
+
+function formatEuro(value, compact = false) {
+    return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: compact ? 0 : 2
+    }).format(value || 0);
+}
+
 function calculateResourceDistribution() {
     const distribution = { MO: 0, MAQ: 0, MAT: 0, SUB: 0 };
 
@@ -2128,6 +2295,24 @@ function renderCharts() {
 
     const isDark = document.body.classList.contains('dark-theme');
     const labelColor = isDark ? '#e2e8f0' : '#1e293b';
+    const gridColor = isDark ? 'rgba(148, 163, 184, 0.18)' : 'rgba(100, 116, 139, 0.18)';
+    const tooltipBg = isDark ? '#0f172a' : '#ffffff';
+    const tooltipColor = isDark ? '#f8fafc' : '#0f172a';
+    const sharedTooltip = {
+        backgroundColor: tooltipBg,
+        titleColor: tooltipColor,
+        bodyColor: tooltipColor,
+        borderColor: isDark ? '#334155' : '#cbd5e1',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+            label: context => {
+                const label = context.label || context.dataset.label || '';
+                const raw = context.parsed?.x ?? context.parsed ?? 0;
+                return `${label}: ${formatEuro(raw)}`;
+            }
+        }
+    };
 
     const ctx1 = document.getElementById('resourceTypeChart').getContext('2d');
     typeChartInstance = new Chart(ctx1, {
@@ -2136,17 +2321,29 @@ function renderCharts() {
             labels: ['Mano de Obra (MO)', 'Maquinaria (MAQ)', 'Materiales (MAT)', 'Otros/Subcontratas (SUB)'],
             datasets: [{
                 data: [dist.MO, dist.MAQ, dist.MAT, dist.SUB],
-                backgroundColor: ['#ef4444', '#d97706', '#3b82f6', '#a855f7'],
-                borderWidth: 1
+                backgroundColor: [
+                    RESOURCE_CHART_COLORS.MO,
+                    RESOURCE_CHART_COLORS.MAQ,
+                    RESOURCE_CHART_COLORS.MAT,
+                    RESOURCE_CHART_COLORS.SUB
+                ],
+                borderColor: isDark ? '#0f172a' : '#ffffff',
+                borderWidth: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                tooltip: sharedTooltip,
                 legend: {
                     position: 'bottom',
-                    labels: { color: labelColor }
+                    labels: {
+                        color: labelColor,
+                        usePointStyle: true,
+                        boxWidth: 8,
+                        padding: 16
+                    }
                 }
             }
         }
@@ -2160,7 +2357,18 @@ function renderCharts() {
             datasets: [{
                 label: 'Coste en Euros (€)',
                 data: topCaps.map(c => c.cost),
-                backgroundColor: '#800020',
+                backgroundColor: topCaps.map((_, idx) => {
+                    const palette = [
+                        RESOURCE_CHART_COLORS.MAT,
+                        RESOURCE_CHART_COLORS.MO,
+                        RESOURCE_CHART_COLORS.MAQ,
+                        RESOURCE_CHART_COLORS.SUB,
+                        '#0ea5e9'
+                    ];
+                    return palette[idx % palette.length];
+                }),
+                borderColor: 'rgba(255, 255, 255, 0)',
+                borderWidth: 1,
                 borderRadius: 4
             }]
         },
@@ -2169,11 +2377,21 @@ function renderCharts() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: sharedTooltip
             },
             scales: {
-                x: { ticks: { color: labelColor } },
-                y: { ticks: { color: labelColor } }
+                x: {
+                    grid: { color: gridColor },
+                    ticks: {
+                        color: labelColor,
+                        callback: value => formatEuro(value, true)
+                    }
+                },
+                y: {
+                    grid: { color: 'transparent' },
+                    ticks: { color: labelColor }
+                }
             }
         }
     });
@@ -2345,6 +2563,18 @@ if (exportExcelBtn) {
     });
 }
 
+function openModal(modalEl, display = 'flex') {
+    if (!modalEl) return;
+    modalEl.classList.remove('is-hidden');
+    modalEl.style.display = display;
+}
+
+function closeModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.style.display = 'none';
+    modalEl.classList.add('is-hidden');
+}
+
 // Dashboard modal toggling
 const dashboardBtn = document.getElementById('dashboardBtn');
 const dashboardModal = document.getElementById('dashboardModal');
@@ -2352,17 +2582,17 @@ const closeDashboardBtn = document.getElementById('closeDashboardBtn');
 
 if (dashboardBtn && dashboardModal && closeDashboardBtn) {
     dashboardBtn.addEventListener('click', () => {
-        dashboardModal.style.display = 'flex';
+        openModal(dashboardModal);
         setTimeout(renderCharts, 50);
     });
 
     closeDashboardBtn.addEventListener('click', () => {
-        dashboardModal.style.display = 'none';
+        closeModal(dashboardModal);
     });
 
-    window.addEventListener('click', (e) => {
+    dashboardModal.addEventListener('click', (e) => {
         if (e.target === dashboardModal) {
-            dashboardModal.style.display = 'none';
+            closeModal(dashboardModal);
         }
     });
 }
@@ -2377,16 +2607,16 @@ const clearCompareBtn = document.getElementById('clearCompareBtn');
 
 if (compareBtn && compareModal && closeCompareBtn) {
     compareBtn.addEventListener('click', () => {
-        compareModal.style.display = 'flex';
+        openModal(compareModal);
     });
 
     closeCompareBtn.addEventListener('click', () => {
-        compareModal.style.display = 'none';
+        closeModal(compareModal);
     });
 
-    window.addEventListener('click', (e) => {
+    compareModal.addEventListener('click', (e) => {
         if (e.target === compareModal) {
-            compareModal.style.display = 'none';
+            closeModal(compareModal);
         }
     });
 }
@@ -2419,7 +2649,7 @@ if (runCompareBtn && compareFileInput) {
                 renderCurrentLevel();
                 updateTotalBudgetDisplay();
 
-                compareModal.style.display = 'none';
+                closeModal(compareModal);
             } else {
                 alert("Error al cargar el archivo de comparación: " + result.error);
             }
@@ -2442,6 +2672,15 @@ if (clearCompareBtn) {
         updateTotalBudgetDisplay();
     });
 }
+
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    [dashboardModal, compareModal, planningModal].forEach(modalEl => {
+        if (modalEl && getComputedStyle(modalEl).display !== 'none') {
+            closeModal(modalEl);
+        }
+    });
+});
 
 // Filtros avanzados y expansión
 const expandAllBtn = document.getElementById('expandAllBtn');
@@ -2500,9 +2739,12 @@ const applyCoeffsBtn = document.getElementById('applyCoeffsBtn');
 
 if (toggleCoeffsBtn && coeffsPanel) {
     toggleCoeffsBtn.addEventListener('click', () => {
-        if (coeffsPanel.style.display === 'none') {
+        const isHidden = coeffsPanel.classList.contains('is-hidden') || getComputedStyle(coeffsPanel).display === 'none';
+        if (isHidden) {
+            coeffsPanel.classList.remove('is-hidden');
             coeffsPanel.style.display = 'block';
         } else {
+            coeffsPanel.classList.add('is-hidden');
             coeffsPanel.style.display = 'none';
         }
     });
@@ -2519,7 +2761,9 @@ if (applyCoeffsBtn) {
         globalCoeffs.baja = bajaVal;
 
         updateTotalBudgetDisplay();
+        coeffsPanel.classList.add('is-hidden');
         coeffsPanel.style.display = 'none';
+        showNotification('Coeficientes aplicados');
     });
 }
 
@@ -2609,39 +2853,25 @@ function showNotification(message) {
     if (!container) {
         container = document.createElement('div');
         container.id = 'notificationContainer';
-        container.style.position = 'fixed';
-        container.style.bottom = '20px';
-        container.style.right = '20px';
-        container.style.zIndex = '9999';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.gap = '10px';
+        container.className = 'notification-container';
+        container.setAttribute('aria-live', 'polite');
+        container.setAttribute('aria-atomic', 'true');
         document.body.appendChild(container);
     }
     
     const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
     toast.textContent = message;
-    toast.style.backgroundColor = 'var(--text-primary)';
-    toast.style.color = 'var(--bg-color)';
-    toast.style.padding = '10px 20px';
-    toast.style.borderRadius = '6px';
-    toast.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.2)';
-    toast.style.fontSize = '0.85rem';
-    toast.style.fontWeight = '500';
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    toast.style.transition = 'all 0.2s ease-out';
     
     container.appendChild(toast);
     
     setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
+        toast.classList.add('toast-visible');
     }, 10);
     
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(10px)';
+        toast.classList.remove('toast-visible');
         setTimeout(() => {
             toast.remove();
         }, 200);
@@ -2800,6 +3030,17 @@ function formatDate(d) {
     return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+function getCurrentGanttWeek() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(ganttStartDate);
+    start.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((today - start) / 86400000);
+    if (diffDays < 0) return null;
+    const week = Math.floor(diffDays / 7) + 1;
+    return week >= 1 && week <= ganttTotalWeeks ? week : null;
+}
+
 // Generar cabecera del timeline (meses + semanas)
 function buildGanttHeader(totalWeeks) {
     const monthRow = document.createElement('div');
@@ -2817,6 +3058,7 @@ function buildGanttHeader(totalWeeks) {
 
         const wCell = document.createElement('div');
         wCell.className = 'gantt-week-cell';
+        if (getCurrentGanttWeek() === w) wCell.classList.add('gantt-week-today');
         wCell.textContent = 'S' + w;
         wCell.title = formatDate(date);
         weekRow.appendChild(wCell);
@@ -2825,6 +3067,7 @@ function buildGanttHeader(totalWeeks) {
             if (lastMonth !== null) {
                 const mCell = document.createElement('div');
                 mCell.className = 'gantt-month-cell';
+                if (monthCells.length % 2 === 1) mCell.classList.add('gantt-month-cell-alt');
                 mCell.textContent = lastMonth;
                 mCell.style.width = (monthSpan * GANTT_WEEK_PX) + 'px';
                 monthCells.push(mCell);
@@ -2838,6 +3081,7 @@ function buildGanttHeader(totalWeeks) {
     if (lastMonth) {
         const mCell = document.createElement('div');
         mCell.className = 'gantt-month-cell';
+        if (monthCells.length % 2 === 1) mCell.classList.add('gantt-month-cell-alt');
         mCell.textContent = lastMonth;
         mCell.style.width = (monthSpan * GANTT_WEEK_PX) + 'px';
         monthCells.push(mCell);
@@ -2861,7 +3105,7 @@ function renderPlanningModal() {
 
     const modal = document.getElementById('planningModal');
     if (!modal) return;
-    modal.style.display = 'flex';
+    openModal(modal);
 
     rebuildGanttDOM();
 }
@@ -2872,6 +3116,7 @@ function rebuildGanttDOM() {
     container.innerHTML = '';
 
     const totalWeeks = ganttTotalWeeks;
+    const currentWeek = getCurrentGanttWeek();
 
     // ---- Cabecera grid ----
     const tableWrap = document.createElement('div');
@@ -2962,14 +3207,23 @@ function rebuildGanttDOM() {
         // Grid de fondo
         for (let w = 1; w <= totalWeeks; w++) {
             const cell = document.createElement('div');
-            cell.className = 'gantt-bg-cell' + (w % 4 === 0 ? ' gantt-bg-month-end' : '');
+            cell.className = 'gantt-bg-cell' + (w % 2 === 0 ? ' gantt-bg-week-alt' : '') + (w % 4 === 0 ? ' gantt-bg-month-end' : '');
+            cell.style.left = ((w - 1) * GANTT_WEEK_PX) + 'px';
             barRow.appendChild(cell);
+        }
+
+        if (currentWeek !== null) {
+            const todayLine = document.createElement('div');
+            todayLine.className = 'gantt-today-line';
+            todayLine.style.left = ((currentWeek - 1) * GANTT_WEEK_PX) + 'px';
+            barRow.appendChild(todayLine);
         }
 
         // Barra de la tarea
         const bar = document.createElement('div');
         bar.className = 'gantt-bar gantt-bar-depth-' + task.depth;
         bar.dataset.taskId = task.id;
+        bar.title = `${task.summary} · ${formatEuro(task.price)}`;
         positionBar(bar, st.startWeek, st.durationWeeks, totalWeeks);
 
         const resizeL = document.createElement('div');
@@ -2978,6 +3232,7 @@ function rebuildGanttDOM() {
 
         const barLabel = document.createElement('span');
         barLabel.className = 'gantt-bar-label';
+        barLabel.title = task.summary;
         barLabel.textContent = task.summary.length > 18 ? task.summary.slice(0, 16) + '…' : task.summary;
 
         const resizeR = document.createElement('div');
@@ -3136,6 +3391,7 @@ function exportGanttToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, 'Planning Gantt');
     const baseName = currentFileName.replace(/\.[^/.]+$/, '');
     XLSX.writeFile(wb, baseName + '_planning.xlsx');
+    showNotification('Planning exportado a Excel');
 }
 
 // ---- Exportar Gantt a PDF (A4 landscape, 26 sem/página) ----
@@ -3279,6 +3535,7 @@ function exportGanttToPdf() {
 
     const baseName = currentFileName.replace(/\.[^/.]+$/, '');
     doc.save(baseName + '_planning.pdf');
+    showNotification('Planning exportado a PDF');
 }
 
 // ---- Inicializar eventos del modal Planning ----
@@ -3310,13 +3567,13 @@ if (planningBtn) {
 
 if (closePlanningBtn && planningModal) {
     closePlanningBtn.addEventListener('click', () => {
-        planningModal.style.display = 'none';
+        closeModal(planningModal);
     });
 }
 
 if (planningModal) {
     planningModal.addEventListener('click', e => {
-        if (e.target === planningModal) planningModal.style.display = 'none';
+        if (e.target === planningModal) closeModal(planningModal);
     });
 }
 

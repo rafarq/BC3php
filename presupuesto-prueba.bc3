@@ -1,0 +1,19 @@
+~V|BC3 Viewer|FIEBDC-3/2016|BC3php|Presupuesto de prueba|UTF-8|Presupuesto|2|
+~C|PRUEBA##||Presupuesto de prueba BC3|204.50|010126|0|
+~D|PRUEBA##|CAP01#\\1\CAP02#\\1\|
+~C|CAP01#||Capitulo 1 - Obra principal|180.00|010126|0|
+~D|CAP01#|P01\\1\P02\\1\|
+~C|P01|m2|Tabique interior de prueba|112.50|010126|0|
+~T|P01|Partida de prueba con descomposicion, medicion y recursos de mano de obra y materiales.|
+~D|P01|mo001\\2\mt001\\5\|
+~M|CAP01#\P01|1\2\3\1\|2|\Zona piloto\2\1\\1\|
+~C|P02|h|Alquiler de maquinaria ligera|67.50|010126|0|
+~D|P02|mq001\\1.5\|
+~C|CAP02#||Capitulo 2 - Remates|24.50|010126|0|
+~D|CAP02#|P03\\1\|
+~C|P03|ud|Limpieza final de prueba|24.50|010126|0|
+~D|P03|mo002\\1\|
+~C|mo001|h|Oficial de primera|25.00|010126|1|
+~C|mo002|h|Peon de limpieza|24.50|010126|1|
+~C|mt001|m2|Placa de yeso laminado|12.50|010126|3|
+~C|mq001|h|Herramienta electrica auxiliar|45.00|010126|2|
