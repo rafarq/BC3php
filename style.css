@@ -929,8 +929,11 @@ body.dark-theme .app-footer {
 }
 
 .changelog-page {
+    height: auto;
     min-height: 100vh;
-    background: var(--main-bg);
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--bg-color);
     color: var(--text-primary);
 }
 .changelog-shell {

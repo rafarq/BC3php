@@ -20,6 +20,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 
 - La edición inline de resúmenes, precios, descripciones y líneas de medición se activa con doble clic, y las descripciones editadas se guardan en el BC3 modificado.
 - Actualizado el pie de página a V0.3.0 con crédito a System Arquitectura.
+- Consolidada la política del changelog para registrar las mejoras del mismo día dentro de una única entrada fechada, evitando duplicados por fecha.
+
+### Corregido
+
+- Corregido el guardado de BC3 modificados para que los archivos exportados puedan volver a abrirse en la propia app sin perder jerarquía, importes ni factores de descomposición.
+- Corregido el scroll de la vista pública del changelog en `changelog.php`, que quedaba bloqueado por el layout fijo del visor principal.
 
 ---
 
