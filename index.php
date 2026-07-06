@@ -87,8 +87,8 @@ header("Pragma: no-cache");
                 <div class="filter-bar" style="display:none;" id="filterBar">
                     <div class="filter-group">
                         <button type="button" id="expandAllBtn" class="filter-btn" aria-pressed="false">Expandir Todo</button>
-                        <button type="button" id="undoBtn" class="filter-btn" data-icon="undo-2" disabled title="Deshacer (Ctrl+Z)">Deshacer</button>
-                        <button type="button" id="redoBtn" class="filter-btn" data-icon="redo-2" disabled title="Rehacer (Ctrl+Y)">Rehacer</button>
+                        <button type="button" id="undoBtn" class="filter-btn" data-icon-only="undo-2" disabled aria-label="Deshacer" title="Deshacer (Ctrl/Cmd+Z)">Deshacer</button>
+                        <button type="button" id="redoBtn" class="filter-btn" data-icon-only="redo-2" disabled aria-label="Rehacer" title="Rehacer (Ctrl/Cmd+Y o Ctrl/Cmd+Shift+Z)">Rehacer</button>
                     </div>
                     <div class="filter-group">
                         <label for="costFilter">Filtrar por importe:</label>
@@ -169,7 +169,11 @@ header("Pragma: no-cache");
         </main>
         <footer class="app-footer">
             <span>© Licencia Open Source - Software Libre y de Derechos Abiertos</span>
-            <span>V0.2.0 by <a href="https://www.linkedin.com/in/rafarq" target="_blank">Rafael Roa</a> y <a href="https://www.linkedin.com/in/jmcaamanog/" target="_blank">Jose Manuel Caamaño</a></span>
+            <nav class="footer-links" aria-label="Enlaces del proyecto">
+                <a href="https://bc3.sysarq.com/roadmap/" target="_blank" rel="noopener">Roadmap</a>
+                <a href="changelog.php">Changelog</a>
+                <span>V0.3.0 by <a href="https://www.systemarquitectura.com" target="_blank" rel="noopener">System Arquitectura</a></span>
+            </nav>
         </footer>
     </div>
     <!-- Dashboard Modal -->

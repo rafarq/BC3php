@@ -10,9 +10,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 
 ---
 
+## [0.3.0] — 2026-07-06
+
+### Añadido
+
+- Enlaces de pie de página al roadmap público y al changelog renderizado en HTML desde `CHANGELOG.md`.
+
+### Cambiado
+
+- La edición inline de resúmenes, precios, descripciones y líneas de medición se activa con doble clic, y las descripciones editadas se guardan en el BC3 modificado.
+- Actualizado el pie de página a V0.3.0 con crédito a System Arquitectura.
+
+---
+
 ## [0.2.0] — 2026-07-03
 
 ### Añadido
+
 - `CONTRIBUTING.md` con guía de instalación, ejecución y envío de PRs.
 - `SECURITY.md` con política de reporte de vulnerabilidades.
 - `CODE_OF_CONDUCT.md` basado en Contributor Covenant 1.4.
@@ -30,12 +44,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 - Estilos globales para enlaces (`a`) y botones deshabilitados, con nuevas variables de contraste (`--accent-contrast`, `--link-color`, `--link-hover`) adaptadas a modo claro y oscuro.
 
 ### Cambiado
+
 - Sustituidos emojis y símbolos sueltos de la interfaz por iconos SVG locales sin dependencias externas.
 - Centralizada la lógica de carga de BC3 para que el selector de archivo, el botón manual y el arrastre de archivos usen el mismo flujo de procesado.
-- Actualizado el pie de página con el crédito a Rafael Roa como coautor junto a Jose Manuel Caamaño, y ajustada la versión mostrada a V0.2.0.
+- Actualizado el pie de página y ajustada la versión mostrada a V0.2.0.
 - Eliminado el subrayado en el hover de los elementos del breadcrumb para un estilo más limpio.
 
 ### Corregido
+
 - Corregidos selectores CSS del modo oscuro (`.dark-mode` → `body.dark-theme`) que impedían aplicar los estilos oscuros a filas, celdas y columnas del diagrama de Gantt.
 
 ---
@@ -43,6 +59,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 ## [0.1.0] — 2025-12-10
 
 ### Añadido
+
 - Visualizador jerárquico de archivos BC3 (FIEBDC-3) en forma de árbol expandible.
 - Columnas: Código, Unidad, Resumen, Cantidad, Precio e Importe.
 - Tabla de líneas de medición con Uds, Largo, Ancho, Alto y Parciales.
@@ -53,9 +70,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 - `README.md` con guía de instalación y uso.
 
 ### Corregido
+
 - Eliminación del carácter `#` al final de códigos de concepto y partida.
 - Limpieza de símbolos `#` y espacios sobrantes en los campos de texto mostrados.
 
-[Unreleased]: https://github.com/rafarq/BC3php/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/rafarq/BC3php/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/rafarq/BC3php/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rafarq/BC3php/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/rafarq/BC3php/releases/tag/v0.1.0

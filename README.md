@@ -182,14 +182,4 @@ Este proyecto se distribuye bajo la licencia GNU Affero General Public License v
 
 ## Autor
 
-- LinkedIn: https://www.linkedin.com/in/rafaroa/
-- Blog: https://rafarq.com
-- Podcast: https://rafarq.com/podcast
-- X: https://x.com/rafaelroa
-- Instagram: https://www.instagram.com/r4f4r04/
-
-## Colaboradores
-
-Las funcionalidades de búsqueda y filtros avanzados, edición en línea, drag & drop, dashboard de análisis, coeficientes PEM/PEC, comparador de presupuestos, exportación a PDF/Excel, planning con diagrama de Gantt y modo oscuro fueron aportadas por **Jose Manuel Caamaño González**, Arquitecto Técnico & BIM Manager.
-
-- LinkedIn: https://www.linkedin.com/in/jmcaamanog/
+System Arquitectura: https://www.systemarquitectura.com

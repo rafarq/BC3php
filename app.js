@@ -43,6 +43,39 @@ function setThemeIcon(isDark) {
     btn.innerHTML = iconSvg(isDark ? 'sun' : 'moon');
 }
 
+function selectElementContents(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+function enableDoubleClickEditing(el, options = {}) {
+    const { selectOnEdit = false } = options;
+    el.contentEditable = 'false';
+    el.classList.add('inline-editable');
+    el.title = el.title || 'Doble clic para editar';
+
+    el.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    el.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.contentEditable = 'true';
+        el.focus();
+        if (selectOnEdit) {
+            selectElementContents(el);
+        }
+    });
+
+    el.addEventListener('blur', () => {
+        el.contentEditable = 'false';
+    });
+}
+
 document.querySelectorAll('[data-icon], [data-icon-only]').forEach(applyIcon);
 
 // 1. File Input Change
@@ -733,11 +766,7 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     const colSummary = document.createElement('div');
     colSummary.className = 'col-summary';
     colSummary.textContent = concept.summary || '(Sin título)';
-    
-    colSummary.contentEditable = "true";
-    colSummary.addEventListener('click', (e) => {
-        e.stopPropagation(); // Evitar expandir/contraer la fila al editar
-    });
+    enableDoubleClickEditing(colSummary);
 
     colSummary.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -800,22 +829,12 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     
     const isEditablePrice = !concept.code.endsWith('#');
     if (isEditablePrice) {
-        colPrice.contentEditable = "true";
-        colPrice.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evitar expandir/contraer la fila al editar
-        });
+        enableDoubleClickEditing(colPrice, { selectOnEdit: true });
 
         colPrice.addEventListener('focus', () => {
             // Mostrar número simple sin formatear para edición cómoda
             const rawPrice = parseFloat(concept.price) || 0;
             colPrice.textContent = rawPrice;
-            
-            // Seleccionar todo el texto
-            const range = document.createRange();
-            range.selectNodeContents(colPrice);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
         });
 
         colPrice.addEventListener('keydown', (e) => {
@@ -968,12 +987,24 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
             descRow.style.fontSize = '0.9rem';
             descRow.textContent = concept.description;
             descRow.style.borderBottom = '1px solid var(--border-color)';
+            enableDoubleClickEditing(descRow);
+            descRow.addEventListener('blur', () => {
+                const newDescription = descRow.textContent.trim();
+                if (newDescription !== concept.description) {
+                    concept.description = newDescription;
+                    const detCodeEl = document.getElementById('detCode');
+                    if (detCodeEl && detCodeEl.textContent === concept.code.replace(/#+\s*$/, '')) {
+                        showDetails(concept.code);
+                    }
+                    saveHistoryState();
+                }
+            });
             childrenContainer.appendChild(descRow);
         }
 
         // 1. Render Measurements Table
         if (hasMeasurements) {
-            const msTable = createMeasurementTable(concept.measurements);
+            const msTable = createMeasurementTable(concept.measurements, concept);
             childrenContainer.appendChild(msTable);
         }
 
@@ -1048,9 +1079,13 @@ function createMeasurementTable(measurements, concept = null) {
         tdLabel.textContent = m.label || '';
         if (isEditable) {
             tdLabel.className = 'm-cell-editable';
-            tdLabel.contentEditable = 'true';
+            enableDoubleClickEditing(tdLabel);
             tdLabel.addEventListener('blur', () => {
-                m.label = tdLabel.textContent.trim();
+                const newLabel = tdLabel.textContent.trim();
+                if (newLabel !== (m.label || '')) {
+                    m.label = newLabel;
+                    saveHistoryState();
+                }
             });
             tdLabel.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -1068,7 +1103,7 @@ function createMeasurementTable(measurements, concept = null) {
             
             if (isEditable) {
                 td.className += ' m-cell-editable';
-                td.contentEditable = 'true';
+                enableDoubleClickEditing(td, { selectOnEdit: true });
                 
                 td.addEventListener('focus', () => {
                     // Cargar número crudo sin formatear para editar cómodamente
@@ -1184,6 +1219,14 @@ function showMobileDetails(code, container) {
         description.style.color = 'var(--text-secondary)';
         description.style.whiteSpace = 'pre-wrap';
         description.textContent = concept.description;
+        enableDoubleClickEditing(description);
+        description.addEventListener('blur', () => {
+            const newDescription = description.textContent.trim();
+            if (newDescription !== concept.description) {
+                concept.description = newDescription;
+                saveHistoryState();
+            }
+        });
         detailsContainer.appendChild(description);
     }
 
@@ -1219,7 +1262,23 @@ function showDetails(code) {
     document.getElementById('detPrice').textContent = parseFloat(concept.price).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 
     // Description: Prefer ~T description, fallback to Summary
-    document.getElementById('detDescription').innerHTML = (concept.description || concept.summary).replace(/\n/g, '<br>');
+    const oldDescriptionEl = document.getElementById('detDescription');
+    const detDescriptionEl = oldDescriptionEl.cloneNode(false);
+    oldDescriptionEl.replaceWith(detDescriptionEl);
+    detDescriptionEl.textContent = concept.description || concept.summary;
+    enableDoubleClickEditing(detDescriptionEl);
+    detDescriptionEl.addEventListener('blur', () => {
+        const newDescription = detDescriptionEl.textContent.trim();
+        if (newDescription !== (concept.description || concept.summary)) {
+            concept.description = newDescription;
+            const scrollPos = document.getElementById('treeContent').scrollTop;
+            renderCurrentLevel();
+            document.getElementById('treeContent').scrollTop = scrollPos;
+            saveHistoryState();
+        } else {
+            detDescriptionEl.textContent = concept.description || concept.summary;
+        }
+    });
 
     // Mediciones en Panel de Escritorio
     const msSection = document.getElementById('detMeasurementsSection');
@@ -1351,17 +1410,69 @@ function updateTotalBudgetDisplay() {
     }
 }
 
+function sanitizeBC3Field(value) {
+    return String(value ?? '').replace(/\r?\n|\r/g, ' ').replace(/\|/g, '/').trim();
+}
+
+function formatBC3Decimal(value, decimals = 2) {
+    const number = parseFloat(String(value ?? '').replace(',', '.'));
+    return Number.isFinite(number) ? number.toFixed(decimals) : '';
+}
+
+function getMeasurementTotal(concept) {
+    const currentQuantity = parseFloat(concept?.quantity);
+    if (Number.isFinite(currentQuantity)) {
+        return currentQuantity;
+    }
+
+    if (!Array.isArray(concept?.measurements)) {
+        return 0;
+    }
+
+    return concept.measurements.reduce((total, m) => {
+        const u = m.units === '' ? 1 : parseFloat(String(m.units).replace(',', '.'));
+        const l = m.l === '' ? 1 : parseFloat(String(m.l).replace(',', '.'));
+        const w = m.w === '' ? 1 : parseFloat(String(m.w).replace(',', '.'));
+        const h = m.h === '' ? 1 : parseFloat(String(m.h).replace(',', '.'));
+
+        return total
+            + (Number.isFinite(u) ? u : 1)
+            * (Number.isFinite(l) ? l : 1)
+            * (Number.isFinite(w) ? w : 1)
+            * (Number.isFinite(h) ? h : 1);
+    }, 0);
+}
+
 // Reconstrucción del archivo BC3
 function generateModifiedBC3() {
     if (!originalFileText) return "";
 
-    const lines = originalFileText.split(/\r?\n/);
+    const lines = originalFileText.split(/\r\n|\n|\r/);
     const modifiedLines = [];
     let skipLinesUntilNonSlash = false;
+    let skipOriginalRecordContinuations = false;
+    const textRecordCodes = new Set();
+
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('~T|')) {
+            const parts = trimmed.split('|');
+            if (parts[1]) {
+                textRecordCodes.add(parts[1]);
+            }
+        }
+    });
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmed = line.trim();
+
+        if (skipOriginalRecordContinuations) {
+            if (trimmed && !trimmed.startsWith('~')) {
+                continue;
+            }
+            skipOriginalRecordContinuations = false;
+        }
 
         if (skipLinesUntilNonSlash) {
             if (trimmed.startsWith('\\')) {
@@ -1377,9 +1488,14 @@ function generateModifiedBC3() {
             const code = parts[1];
             if (code && parsedData.concepts[code]) {
                 const concept = parsedData.concepts[code];
-                parts[4] = parseFloat(concept.price).toFixed(2);
-                parts[3] = concept.summary || "";
+                // ~C|Code|Unit|Summary|Price|Date|Type|
+                parts[3] = sanitizeBC3Field(concept.summary);
+                parts[4] = formatBC3Decimal(concept.price, 2);
                 modifiedLines.push(parts.join('|'));
+                if (concept.description && !textRecordCodes.has(code)) {
+                    modifiedLines.push(`~T|${code}|${sanitizeBC3Field(concept.description)}|`);
+                    textRecordCodes.add(code);
+                }
             } else {
                 modifiedLines.push(line);
             }
@@ -1391,11 +1507,12 @@ function generateModifiedBC3() {
                 const decompParts = [];
                 parentConcept.decomposition.forEach(item => {
                     decompParts.push(item.code);
-                    decompParts.push(parseFloat(item.factor).toFixed(3));
-                    decompParts.push(item.type || 0);
+                    decompParts.push('');
+                    decompParts.push(formatBC3Decimal(item.factor, 3));
                 });
                 parts[2] = decompParts.join('\\') + '\\';
                 modifiedLines.push(parts.join('|'));
+                skipOriginalRecordContinuations = true;
             } else {
                 modifiedLines.push(line);
             }
@@ -1403,22 +1520,22 @@ function generateModifiedBC3() {
             const parts = trimmed.split('|');
             // Formato: ~M|PARENT\CHILD|1\1\1\1\|TOTAL_SUM|
             const parentChild = parts[1]; // e.g. "01#\01.01"
-            const childCode = parentChild.split('\\')[1];
+            const childCode = parentChild.split('\\').filter(Boolean).pop();
             const concept = parsedData.concepts[childCode];
 
             if (concept && concept.measurements && concept.measurements.length > 0) {
                 // Escribir la línea principal ~M
-                const totalSum = parseFloat(concept.quantity) || 0;
+                const totalSum = getMeasurementTotal(concept);
                 parts[3] = totalSum.toFixed(3);
                 modifiedLines.push(parts.join('|'));
 
                 // Escribir las sublíneas de mediciones editadas
                 concept.measurements.forEach(m => {
-                    const label = m.label || "";
-                    const units = m.units === '' ? "" : parseFloat(m.units).toFixed(3);
-                    const l = m.l === '' ? "" : parseFloat(m.l).toFixed(3);
-                    const w = m.w === '' ? "" : parseFloat(m.w).toFixed(3);
-                    const h = m.h === '' ? "" : parseFloat(m.h).toFixed(3);
+                    const label = sanitizeBC3Field(m.label);
+                    const units = m.units === '' ? "" : formatBC3Decimal(m.units, 3);
+                    const l = m.l === '' ? "" : formatBC3Decimal(m.l, 3);
+                    const w = m.w === '' ? "" : formatBC3Decimal(m.w, 3);
+                    const h = m.h === '' ? "" : formatBC3Decimal(m.h, 3);
                     
                     // Formato FIEBDC: \Label\Units\L\W\H\
                     modifiedLines.push(`\\${label}\\${units}\\${l}\\${w}\\${h}\\`);
@@ -1436,6 +1553,16 @@ function generateModifiedBC3() {
                 parts[5] = "UTF-8";
             }
             modifiedLines.push(parts.join('|'));
+        } else if (trimmed.startsWith('~T|')) {
+            const parts = trimmed.split('|');
+            const code = parts[1];
+            const concept = parsedData.concepts[code];
+            if (concept) {
+                parts[2] = sanitizeBC3Field(concept.description);
+                modifiedLines.push(parts.join('|'));
+            } else {
+                modifiedLines.push(line);
+            }
         } else {
             modifiedLines.push(line);
         }
@@ -1673,7 +1800,7 @@ function exportToPdf() {
         doc.line(15, 282, 195, 282);
         
         // Textos pie de página
-        doc.text("© Licencia Open Source - Software Libre y de Derechos Abiertos | V.1 by Jose Manuel Caamaño", 15, 287);
+        doc.text("© Licencia Open Source - Software Libre y de Derechos Abiertos | V0.3.0 by System Arquitectura", 15, 287);
         
         const pageStr = `Página ${i} de ${totalPages}`;
         doc.text(pageStr, 195 - doc.getTextWidth(pageStr), 287);
@@ -2521,17 +2648,21 @@ function showNotification(message) {
     }, 2000);
 }
 
-// Atajos de teclado (Ctrl+Z y Ctrl+Y)
+// Atajos de teclado del sistema: Ctrl/Cmd+Z, Ctrl/Cmd+Y y Ctrl/Cmd+Shift+Z
 window.addEventListener('keydown', (e) => {
-    const isCtrl = e.ctrlKey || e.metaKey;
-    if (isCtrl) {
-        if (e.key.toLowerCase() === 'z') {
-            e.preventDefault();
-            undo();
-        } else if (e.key.toLowerCase() === 'y') {
-            e.preventDefault();
-            redo();
-        }
+    const usesModifier = e.ctrlKey || e.metaKey;
+    if (!usesModifier || e.altKey) return;
+
+    const key = e.key.toLowerCase();
+    if (key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        redo();
+    } else if (key === 'z') {
+        e.preventDefault();
+        undo();
+    } else if (key === 'y') {
+        e.preventDefault();
+        redo();
     }
 });
 
@@ -2541,6 +2672,10 @@ const redoBtn = document.getElementById('redoBtn');
 
 if (undoBtn) {
     undoBtn.addEventListener('click', undo);
+}
+
+if (redoBtn) {
+    redoBtn.addEventListener('click', redo);
 }
 
 // ============================================================
