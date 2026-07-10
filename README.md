@@ -15,9 +15,10 @@ Echa un vistazo a las capturas en la carpeta **CAPTURAS**.
 - **Líneas de medición**: Tabla detallada con Uds, Largo, Ancho, Alto y cálculo de Parciales
 - **Descripciones inline**: Texto descriptivo de cada partida visible al expandir
 - **Detección de codificación**: Soporte para archivos ANSI, UTF-8 e ISO-8859-1
+- **Proyectos SYSmed**: Guarda y abre en un solo `.sysmed` el presupuesto con sus mediciones y todas las certificaciones mensuales, conservando cada documento como BC3 extraíble
 - **Búsqueda y filtros**: Búsqueda en tiempo real por título, código y medición; filtros por importe mínimo/máximo y tipo de recurso (MO, MAQ, MAT, SUB); expandir/contraer todo con un clic
 - **Edición en línea**: Edición directa de resúmenes y precios unitarios desde la propia tabla, con historial de deshacer/rehacer (Ctrl+Z / Ctrl+Y) y guardado del BC3 modificado
-- **Drag & Drop**: Arrastra y suelta archivos .bc3 directamente sobre la ventana del navegador
+- **Drag & Drop**: Arrastra y suelta archivos `.bc3` o `.sysmed` directamente sobre la ventana del navegador
 - **Dashboard de análisis visual**: Gráficos de distribución por capítulos y por tipo de recurso, con estadísticas globales del presupuesto
 - **Coeficientes globales (PEM a PEC)**: Configuración de Gastos Generales, Beneficio Industrial y Baja/Alza general, con cálculo automático del PEC en tiempo real
 - **Comparador de presupuestos**: Carga un segundo archivo BC3 y compara partida a partida, con desviaciones de precio resaltadas
@@ -27,7 +28,7 @@ Echa un vistazo a las capturas en la carpeta **CAPTURAS**.
 
 ## Requisitos
 
-- PHP 7.4 o superior, con la extensión `mbstring`
+- PHP 7.4 o superior, con las extensiones `mbstring` y `zip`
 - Servidor web (Apache, nginx, o servidor PHP integrado)
 - Navegador moderno (Chrome, Firefox, Edge, Safari)
 - Sin dependencias de internet en producción: todas las librerías JS se incluyen localmente
@@ -62,15 +63,14 @@ php -S localhost:8080
 
 ## Uso
 
-1. Carga el archivo BC3 arrastrándolo o con "Seleccionar archivo .bc3"
-2. Haz clic en "Procesar"
-3. Explora el árbol de presupuesto haciendo clic en los triángulos para expandir/colapsar
-4. Edita directamente cualquier descripción o precio haciendo clic sobre la celda
-5. Busca en tiempo real con la barra de búsqueda y aplica filtros
-6. Exporta el presupuesto completo a PDF o Excel
-7. Planifica con el botón "Planning" para abrir el diagrama de Gantt interactivo
-8. Analiza con el botón "Dashboard" para ver los gráficos de distribución de costes
-9. Guarda las modificaciones con "Guardar" para descargar el BC3 actualizado
+1. Carga un presupuesto `.bc3` o un proyecto `.sysmed` arrastrándolo o mediante el selector de archivo
+2. Explora el árbol de presupuesto haciendo clic en los triángulos para expandir/colapsar
+3. Edita directamente cualquier descripción o precio haciendo clic sobre la celda
+4. Busca en tiempo real con la barra de búsqueda y aplica filtros
+5. Exporta el presupuesto completo a PDF o Excel
+6. Planifica con el botón "Planning" para abrir el diagrama de Gantt interactivo
+7. Analiza con el botón "Dashboard" para ver los gráficos de distribución de costes
+8. Guarda el proyecto completo con "Guardar SYSmed" o recupera el presupuesto BC3 desde "Exportar"
 
 ## Estructura de Archivos
 
@@ -81,6 +81,8 @@ php -S localhost:8080
 | `app.js`                        | Lógica JavaScript del frontend                 |
 | `BC3Parser.php`                 | Parser PHP para archivos BC3                    |
 | `upload.php`                    | Endpoint para subir archivos                    |
+| `sysmed.php`                    | Endpoint para generar proyectos SYSmed          |
+| `SysMedArchive.php`             | Lector, escritor y validador del formato SYSmed |
 | `jspdf.umd.min.js`              | Librería para generación de PDF (local)        |
 | `jspdf.plugin.autotable.min.js` | Plugin de tablas para PDF (local)                |
 | `xlsx.full.min.js`              | Librería para generación de Excel/SheetJS (local) |
@@ -106,6 +108,8 @@ El parser soporta los siguientes registros del estándar FIEBDC-3:
 - **Chart.js** - Dashboard visual
 
 Todas las librerías JS se sirven localmente, sin dependencia de CDN externos.
+
+La especificación interoperable del contenedor de proyecto está documentada en [`SYSMED_FORMAT.md`](SYSMED_FORMAT.md).
 
 ## Integración en Otro Proyecto
 

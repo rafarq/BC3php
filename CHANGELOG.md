@@ -8,6 +8,30 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 
 ## [Unreleased]
 
+### Corregido
+
+- Corregida la generación del BC3 modificado: al editar una partida cuya línea `~M` original traía la subline de medición en la misma línea física que la cabecera, se conservaban los datos antiguos además de escribir los nuevos, duplicando y corrompiendo la medición exportada. Ahora la cabecera `~M` se reescribe limpia y solo quedan las sublíneas actuales.
+
+### Añadido
+
+- Cierre explícito del proyecto activo: el nuevo botón "Cerrar" avisa de guardar en BC3 cuando solo hay presupuesto y mediciones, o en SYSmed cuando existen certificaciones; permite guardar y cerrar, cerrar sin guardar o cancelar, y evita que la sesión cerrada se reabra automáticamente.
+- Formato de proyecto SYSmed v1: un contenedor ZIP versionado con `medicion.bc3`, una certificación BC3 completa por mes, manifiesto con metadatos e integridad SHA-256 y archivos extraíbles para mantener la interoperabilidad FIEBDC-3.
+- Apertura directa de `.sysmed`: la web carga el presupuesto y reconstruye automáticamente todas las certificaciones mensuales incluidas, con validación de versión, rutas, tamaños e integridad del paquete.
+- Recuperación automática de la sesión al recargar: si había un presupuesto abierto, se reabre por donde iba, con todos los cambios, los capítulos expandidos, el scroll del árbol, el nivel de navegación móvil y la pestaña activa (incluido el mes de certificación seleccionado).
+- Exportación e importación de certificaciones en formato BC3 (FIEBDC-3), para intercambiar la certificación del mes seleccionado con otros programas del sector (Presto, Arquímedes, etc.): "BC3" genera un fichero con la misma estructura del presupuesto pero con la medición de cada partida sustituida por su cantidad certificada a origen, y "Importar BC3" vuelca las cantidades de un fichero de certificación externo (o de cualquier BC3 con mediciones) al mes seleccionado, calculando la diferencia con lo ya certificado en meses anteriores.
+
+### Cambiado
+
+- "Guardar" genera ahora el proyecto completo `.sysmed`; el presupuesto BC3 modificado sigue disponible en el menú "Exportar" y cada certificación conserva su exportación BC3 individual.
+- Las certificaciones pasan de modal a pestaña propia: una barra de pestañas "Presupuesto" / "Certificaciones" bajo la cabecera permite alternar entre el árbol del presupuesto y la vista de certificación sin superposiciones.
+- Cada certificación mensual dispone ahora de su propia pestaña dentro de la vista de Certificaciones; los meses existentes se ordenan cronológicamente y el selector permite abrir o crear otro mes.
+- La tabla de certificación ahora es una vista en árbol que replica la jerarquía del presupuesto: capítulos plegables con importes agregados (importe del período, % a origen e importe pendiente) y partidas hoja indentadas con la cantidad del período editable; incluye botón "Contraer todo" / "Expandir todo".
+- Compactada la cabecera de certificaciones en móvil: controles y tarjetas de resumen más pequeños con scroll horizontal, y ocultación del bloque PEM/PEC/estadísticas mientras la pestaña activa es Certificaciones, liberando altura para la tabla.
+
+### Corregido
+
+- Corregida la aparición del botón móvil `Acciones` en escritorio, donde el clic no desplegaba ningún contenido porque las acciones ya se muestran directamente en la cabecera.
+
 ---
 
 ## [0.4.0] — 2026-07-09

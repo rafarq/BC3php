@@ -23,7 +23,7 @@ header("Pragma: no-cache");
             <div class="upload-area">
                 <form id="uploadForm">
                     <label for="bc3file" class="btn btn-primary upload-btn mobile-primary-upload">
-                        <span class="file-name-label">Seleccionar archivo .bc3</span>
+                        <span class="file-name-label">Seleccionar .bc3 o .sysmed</span>
                     </label>
                     <button type="button" id="mobileActionsToggle" class="btn btn-secondary mobile-actions-toggle" data-icon="menu" data-trailing-icon="chevron-down" aria-expanded="false" aria-controls="headerActionsMenu">Acciones</button>
                     <div class="header-actions-menu" id="headerActionsMenu">
@@ -33,23 +33,24 @@ header("Pragma: no-cache");
                     </div>
                     <div class="header-action-group" aria-label="Archivo">
                         <label for="bc3file" class="btn btn-primary upload-btn">
-                            <span id="fileName" class="file-name-label">Seleccionar archivo .bc3</span>
-                            <input type="file" id="bc3file" name="bc3file" accept=".bc3" hidden>
+                            <span id="fileName" class="file-name-label">Seleccionar .bc3 o .sysmed</span>
+                            <input type="file" id="bc3file" name="bc3file" accept=".bc3,.sysmed" hidden>
                         </label>
-                        <button type="button" id="saveBtn" class="btn btn-success save-btn is-hidden">Guardar</button>
+                        <button type="button" id="saveBtn" class="btn btn-success save-btn is-hidden">Guardar SYSmed</button>
 
                         <!-- Dropdown de exportación unificado -->
                         <div class="dropdown is-hidden" id="exportDropdown">
                             <button type="button" class="btn btn-secondary export-btn dropdown-toggle" data-icon="download" data-trailing-icon="chevron-down">Exportar</button>
                             <div class="dropdown-content">
+                                <button type="button" id="exportBudgetBc3Btn" data-icon="file-text">Exportar presupuesto BC3</button>
                                 <button type="button" id="exportPdfBtn" data-icon="file-text">Exportar a PDF</button>
                                 <button type="button" id="exportExcelBtn" data-icon="file-spreadsheet">Exportar a Excel</button>
                             </div>
                         </div>
+                        <button type="button" id="closeProjectBtn" class="btn btn-secondary close-project-btn is-hidden" data-icon="x">Cerrar</button>
                     </div>
                     <div class="header-action-group" aria-label="Herramientas">
                         <button type="button" id="compareBtn" class="btn btn-secondary compare-btn is-hidden">Comparar</button>
-                        <button type="button" id="certBtn" class="btn btn-secondary cert-btn is-hidden" data-icon="clipboard-check">Certificación</button>
                     </div>
                     <div class="header-action-group header-action-group-last" aria-label="Tema">
                         <button type="button" id="themeToggle" class="btn btn-ghost theme-toggle-btn" data-icon-only="moon" aria-label="Cambiar tema"></button>
@@ -91,15 +92,21 @@ header("Pragma: no-cache");
             </div>
         </div>
 
-        <main class="content-area">
+        <!-- Pestañas de vista: Presupuesto / Certificaciones -->
+        <nav class="view-tabs is-hidden" id="viewTabs" role="tablist" aria-label="Vistas del presupuesto">
+            <button type="button" id="tabBudget" class="view-tab is-active" role="tab" aria-selected="true" aria-controls="contentArea" data-icon="file-text">Presupuesto</button>
+            <button type="button" id="tabCert" class="view-tab" role="tab" aria-selected="false" aria-controls="certView" data-icon="clipboard-check">Certificaciones</button>
+        </nav>
+
+        <main class="content-area" id="contentArea" role="tabpanel" aria-labelledby="tabBudget">
             <div class="tree-panel" id="treePanel">
                 <div class="empty-state">
                     <div class="empty-card">
                         <div class="empty-icon" data-icon-only="folder-up"></div>
-                        <h1>Arrastra tu archivo .bc3 o haz clic para seleccionarlo</h1>
-                        <p>Visualiza el árbol completo del presupuesto, revisa mediciones y precios, exporta resultados y planifica partidas.</p>
+                        <h1>Arrastra tu archivo .bc3 o .sysmed, o haz clic para seleccionarlo</h1>
+                        <p>Abre un presupuesto BC3 o un proyecto SYSmed con todas sus certificaciones, revisa mediciones y exporta cada BC3 cuando lo necesites.</p>
                         <div class="empty-actions">
-                            <label for="bc3file" class="btn btn-primary">Seleccionar archivo .bc3</label>
+                            <label for="bc3file" class="btn btn-primary">Seleccionar .bc3 o .sysmed</label>
                             <button type="button" id="loadExampleBtn" class="btn btn-secondary" data-icon="file-spreadsheet">Cargar presupuesto de prueba</button>
                         </div>
                         <div class="empty-drop-hint">También puedes soltar el archivo directamente sobre esta ventana.</div>
@@ -207,6 +214,29 @@ header("Pragma: no-cache");
                 </div>
             </div>
         </main>
+
+        <!-- Vista de Certificaciones / Seguimiento de obra -->
+        <section class="cert-view is-hidden" id="certView" role="tabpanel" aria-labelledby="tabCert">
+            <div class="cert-controls">
+                <label class="cert-month-label">Abrir o crear mes:
+                    <input type="month" id="certMonth" class="cert-month-input">
+                </label>
+                <div class="cert-export-actions">
+                    <button type="button" id="certExpandAllBtn" class="btn btn-secondary" aria-pressed="true">Contraer todo</button>
+                    <label for="certImportFile" class="btn btn-secondary" data-icon="upload">Importar BC3</label>
+                    <input type="file" id="certImportFile" accept=".bc3" hidden>
+                    <button type="button" id="exportCertBc3Btn" class="btn btn-secondary" data-icon="download">BC3</button>
+                    <button type="button" id="exportCertExcelBtn" class="btn btn-secondary" data-icon="file-spreadsheet">Excel</button>
+                    <button type="button" id="exportCertPdfBtn" class="btn btn-secondary" data-icon="file-text">PDF</button>
+                </div>
+            </div>
+            <nav class="cert-month-tabs" id="certMonthTabs" role="tablist" aria-label="Certificaciones por mes"></nav>
+            <div class="cert-month-panel" id="certMonthPanel" role="tabpanel" tabindex="0">
+                <div class="cert-summary" id="certSummary"></div>
+                <div class="cert-table-wrap" id="certTableWrap"></div>
+            </div>
+        </section>
+
         <footer class="app-footer">
             <span class="footer-license">Licencia: <a href="LICENSE" class="footer-license-link">GNU Affero General Public License v3.0</a></span>
             <nav class="footer-links" aria-label="Enlaces del proyecto">
@@ -217,6 +247,27 @@ header("Pragma: no-cache");
         </footer>
     </div>
     <div id="notificationContainer" class="notification-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Confirmación de cierre del presupuesto/medición actual -->
+    <div id="closeProjectModal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="closeProjectTitle" aria-describedby="closeProjectMessage">
+        <div class="modal-content close-project-modal-content">
+            <div class="modal-header">
+                <h3 id="closeProjectTitle">Cerrar mediciones</h3>
+                <button type="button" id="closeProjectDismissBtn" class="close-btn" data-icon-only="x" aria-label="Cancelar cierre"></button>
+            </div>
+            <div class="modal-body close-project-modal-body">
+                <div class="close-project-format" id="closeProjectFormat"></div>
+                <p id="closeProjectMessage"></p>
+                <p class="close-project-warning">Si cierras sin guardar, se eliminará la sesión local que estás viendo.</p>
+                <div class="close-project-actions">
+                    <button type="button" id="closeProjectCancelBtn" class="btn btn-secondary">Cancelar</button>
+                    <button type="button" id="closeProjectDiscardBtn" class="btn btn-danger">Cerrar sin guardar</button>
+                    <button type="button" id="closeProjectSaveBtn" class="btn btn-success">Guardar y cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dashboard Modal -->
     <div id="dashboardModal" class="modal is-hidden">
         <div class="modal-content dashboard-modal-content">
@@ -271,29 +322,6 @@ header("Pragma: no-cache");
         </div>
     </div>
 
-    <!-- Modal Certificaciones / Seguimiento de obra -->
-    <div id="certModal" class="modal is-hidden">
-        <div class="modal-content cert-modal-content">
-            <div class="modal-header">
-                <h3>Certificaciones y Seguimiento de Obra</h3>
-                <button type="button" id="closeCertBtn" class="close-btn" data-icon-only="x" aria-label="Cerrar certificaciones"></button>
-            </div>
-            <div class="modal-body cert-modal-body">
-                <div class="cert-controls">
-                    <label class="cert-month-label">Mes de certificación:
-                        <input type="month" id="certMonth" class="cert-month-input">
-                    </label>
-                    <div class="cert-export-actions">
-                        <button type="button" id="exportCertExcelBtn" class="btn btn-secondary" data-icon="file-spreadsheet">Excel</button>
-                        <button type="button" id="exportCertPdfBtn" class="btn btn-secondary" data-icon="file-text">PDF</button>
-                    </div>
-                </div>
-                <div class="cert-summary" id="certSummary"></div>
-                <div class="cert-table-wrap" id="certTableWrap"></div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Planning / Gantt -->
     <div id="planningModal" class="planning-modal-overlay is-hidden">
         <div class="planning-modal-content">
@@ -319,7 +347,7 @@ header("Pragma: no-cache");
     <div id="dragOverlay" class="drag-overlay">
         <div class="drag-overlay-box">
             <div class="drag-overlay-icon" data-icon-only="folder-up"></div>
-            <div class="drag-overlay-text">Suelte el archivo .bc3 aquí para cargarlo</div>
+            <div class="drag-overlay-text">Suelte el archivo .bc3 o .sysmed aquí para cargarlo</div>
         </div>
     </div>
     <script src="jspdf.umd.min.js"></script>

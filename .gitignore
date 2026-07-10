@@ -1,5 +1,6 @@
 .DS_Store
 *.bc3
+*.sysmed
 !presupuesto-prueba.bc3
 subir.sh
 mejoras*

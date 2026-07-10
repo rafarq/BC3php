@@ -215,7 +215,7 @@ button:disabled {
     justify-content: flex-end;
 }
 
-.mobile-actions-toggle {
+button.mobile-actions-toggle {
     display: none;
 }
 
@@ -292,6 +292,17 @@ button:disabled {
 .btn-success:hover {
     background-color: #16a34a;
     border-color: #16a34a;
+}
+
+.btn-danger {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
 }
 
 .btn-ghost {
@@ -1020,7 +1031,7 @@ body.is-processing .content-area::after {
         position: relative;
     }
 
-    .mobile-actions-toggle {
+    button.mobile-actions-toggle {
         display: inline-flex;
         justify-content: center;
         width: 100%;
@@ -2309,6 +2320,10 @@ body.dark-theme .pec-total {
     width: 500px;
     max-width: 100%;
 }
+.close-project-modal-content {
+    width: 560px;
+    max-width: 100%;
+}
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -2344,6 +2359,59 @@ body.dark-theme .pec-total {
 }
 .modal-body {
     padding: var(--space-5);
+}
+
+.close-project-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.close-project-modal-body p {
+    margin: 0;
+    line-height: 1.55;
+}
+
+.close-project-format {
+    align-self: flex-start;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--sidebar-bg);
+    color: var(--text-primary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.close-project-format.is-sysmed {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.close-project-warning {
+    padding: var(--space-2) var(--space-3);
+    border-left: 3px solid #d97706;
+    background: rgba(217, 119, 6, 0.09);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.close-project-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-2);
+}
+
+@media (max-width: 560px) {
+    .close-project-actions {
+        flex-direction: column-reverse;
+    }
+
+    .close-project-actions .btn {
+        width: 100%;
+    }
 }
 
 /* Dashboard Grid */
@@ -3006,7 +3074,8 @@ body.dark-theme .gantt-month-cell-alt { background: #151515; }
 .header-action-group .btn.dashboard-btn,
 .header-action-group .btn.planning-btn,
 .header-action-group .btn.compare-btn,
-.header-action-group .btn.export-btn {
+.header-action-group .btn.export-btn,
+.header-action-group .btn.close-project-btn {
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
@@ -3020,7 +3089,8 @@ body.dark-theme .gantt-month-cell-alt { background: #151515; }
 .header-action-group .btn.dashboard-btn:hover,
 .header-action-group .btn.planning-btn:hover,
 .header-action-group .btn.compare-btn:hover,
-.header-action-group .btn.export-btn:hover {
+.header-action-group .btn.export-btn:hover,
+.header-action-group .btn.close-project-btn:hover {
     background: var(--hover-bg);
     border-color: var(--text-secondary);
     color: var(--text-primary);
@@ -3347,20 +3417,63 @@ body.dark-theme .gantt-month-cell-alt { background: #151515; }
 }
 
 /* ==========================================================================
+   Pestañas de vista (Presupuesto / Certificaciones)
+   ========================================================================== */
+
+.view-tabs {
+    display: flex;
+    gap: var(--space-2);
+    padding: 0 2rem;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.view-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.view-tab:hover,
+.view-tab:focus-visible {
+    color: var(--text-primary);
+}
+
+.view-tab.is-active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.view-tab .ui-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ==========================================================================
    Certificaciones y seguimiento de obra
    ========================================================================== */
 
-.cert-modal-content {
-    width: min(1180px, 96vw);
-    max-height: 92vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.cert-modal-body {
+.cert-view {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    padding: var(--space-3) 2rem;
+    background-color: var(--bg-color);
     overflow: hidden;
 }
 
@@ -3395,6 +3508,77 @@ body.dark-theme .gantt-month-cell-alt { background: #151515; }
 .cert-export-actions {
     display: flex;
     gap: var(--space-2);
+}
+
+.cert-month-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid var(--border-color);
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.cert-month-tab {
+    appearance: none;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    min-height: 38px;
+    margin-bottom: -1px;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--border-color);
+    border-bottom-color: var(--border-color);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: var(--sidebar-bg);
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.cert-month-tab:hover,
+.cert-month-tab:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.cert-month-tab:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.cert-month-tab.is-active {
+    color: var(--accent);
+    background: var(--bg-color);
+    border-color: var(--accent);
+    border-bottom-color: var(--bg-color);
+}
+
+.cert-month-tab-number {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.cert-month-tab-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cert-month-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
 }
 
 .cert-summary {
@@ -3515,6 +3699,54 @@ body.dark-theme .gantt-month-cell-alt { background: #151515; }
     color: #d97706;
 }
 
+/* Filas de capítulo del árbol de certificación */
+.cert-chapter-row td {
+    font-weight: 600;
+    background: var(--table-header-bg);
+    border-bottom: 1px solid var(--table-border);
+}
+
+.cert-table tbody tr.cert-chapter-row:nth-child(even),
+.cert-table tbody tr.cert-chapter-row:hover {
+    background: var(--table-header-bg);
+}
+
+.cert-code-cell {
+    white-space: nowrap;
+}
+
+.cert-tree-toggle {
+    appearance: none;
+    border: none;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    padding: 0;
+    color: var(--text-secondary);
+    cursor: pointer;
+    vertical-align: middle;
+    border-radius: var(--radius-sm);
+}
+
+.cert-tree-toggle:hover {
+    color: var(--text-primary);
+    background: var(--table-row-hover-bg);
+}
+
+.cert-tree-toggle .ui-icon {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--transition-fast);
+}
+
+.cert-tree-toggle.is-collapsed .ui-icon {
+    transform: rotate(-90deg);
+}
+
 .cert-empty {
     padding: var(--space-5);
     text-align: center;
@@ -3522,20 +3754,79 @@ body.dark-theme .gantt-month-cell-alt { background: #151515; }
 }
 
 @media (max-width: 768px) {
-    .cert-modal-content {
-        width: 100vw;
-        height: 100dvh;
-        max-height: none;
-        border-radius: 0;
+    .view-tabs {
+        padding: 0 var(--space-3);
     }
 
+    .cert-view {
+        padding: var(--space-2) var(--space-3);
+        gap: var(--space-2);
+    }
+
+    /* En la pestaña de certificaciones la información del presupuesto
+       (PEM/PEC, coeficientes, stats) no aporta: liberar altura de cabecera */
+    body.view-cert .project-info {
+        display: none !important;
+    }
+
+    /* Cabecera compacta: controles en una sola fila con salto y
+       resumen en tarjetas pequeñas con scroll horizontal */
     .cert-controls {
-        flex-direction: column;
-        align-items: stretch;
+        gap: var(--space-2);
+    }
+
+    .cert-month-label {
+        font-size: var(--font-size-xs);
+    }
+
+    .cert-month-input {
+        min-height: 32px;
+        padding: 2px var(--space-1);
+    }
+
+    .cert-month-tab {
+        min-height: 34px;
+        padding: 3px var(--space-2);
+    }
+
+    .cert-month-tab-number {
+        font-size: 0.65rem;
+    }
+
+    .cert-month-tab-label {
+        font-size: var(--font-size-xs);
+    }
+
+    .cert-month-panel {
+        gap: var(--space-2);
+    }
+
+    .cert-export-actions {
+        gap: var(--space-1);
+        flex-wrap: wrap;
+    }
+
+    .cert-export-actions .btn {
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--font-size-xs);
+        min-height: 32px;
+    }
+
+    .cert-summary {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: var(--space-2);
+        -webkit-overflow-scrolling: touch;
     }
 
     .cert-stat {
-        min-width: 140px;
+        flex: 0 0 auto;
+        min-width: 128px;
+        padding: var(--space-1) var(--space-2);
+    }
+
+    .cert-stat-value {
+        font-size: var(--font-size-sm);
     }
 
     .cert-table {

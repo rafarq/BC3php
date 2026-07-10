@@ -21,7 +21,8 @@ const UI_ICONS = {
     'trash-2': '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
     'clipboard-check': '<svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>',
     'history': '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
-    'more-vertical': '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>'
+    'more-vertical': '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>',
+    'upload': '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>'
 };
 
 function iconSvg(name, className = 'ui-icon') {
@@ -206,6 +207,8 @@ if (uploadForm && mobileActionsToggle && headerActionsMenu) {
 const fileInput = document.getElementById('bc3file');
 const EXAMPLE_BC3_FILE = 'presupuesto-prueba.bc3';
 let currentFileName = "presupuesto.bc3";
+let currentBudgetFileName = "presupuesto.bc3";
+let currentSysMedManifest = null;
 let isProcessingFile = false;
 if (fileInput) {
     fileInput.addEventListener('change', function (e) {
@@ -268,8 +271,9 @@ window.addEventListener('resize', function () {
 async function processBc3File(file, triggerBtn = null) {
     if (!file || isProcessingFile) return;
 
-    if (!file.name.toLowerCase().endsWith('.bc3')) {
-        alert('Por favor, selecciona un archivo con extensión .bc3');
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith('.bc3') && !lowerName.endsWith('.sysmed')) {
+        alert('Por favor, selecciona un archivo con extensión .bc3 o .sysmed');
         return;
     }
 
@@ -296,6 +300,16 @@ async function processBc3File(file, triggerBtn = null) {
 
         if (result.success) {
             renderApp(result.data);
+            if (result.sysmed) {
+                applyLoadedSysMed(result.sysmed);
+                const certCount = Array.isArray(result.sysmed.certifications) ? result.sysmed.certifications.length : 0;
+                showNotification(`Proyecto SYSmed cargado: ${certCount} certificación${certCount === 1 ? '' : 'es'}`);
+            } else {
+                currentBudgetFileName = file.name;
+                currentSysMedManifest = null;
+                certCurrentMonth = getDefaultCertMonth();
+                certLoad();
+            }
         } else {
             alert('Error: ' + (result.error || 'Unknown error'));
         }
@@ -631,12 +645,19 @@ function renderApp(data) {
     const exportDrop = document.getElementById('exportDropdown');
     const cBtn = document.getElementById('compareBtn');
     const dBtn = document.getElementById('dashboardBtn');
-    const certButton = document.getElementById('certBtn');
-    [sBtn, exportDrop, cBtn, dBtn, certButton].forEach(el => {
+    const closeProjectButton = document.getElementById('closeProjectBtn');
+    [sBtn, exportDrop, cBtn, dBtn, closeProjectButton].forEach(el => {
         if (!el) return;
         el.classList.remove('is-hidden');
         el.style.display = 'inline-block';
     });
+    const viewTabsBar = document.getElementById('viewTabs');
+    if (viewTabsBar) {
+        viewTabsBar.classList.remove('is-hidden');
+        viewTabsBar.style.display = 'flex';
+    }
+    // Un presupuesto nuevo siempre arranca en la pestaña Presupuesto
+    if (typeof switchView === 'function') switchView('budget');
     const pBtn = document.getElementById('planningBtn');
     if (pBtn) {
         pBtn.classList.remove('is-hidden');
@@ -1989,10 +2010,12 @@ function generateModifiedBC3() {
             const concept = parsedData.concepts[childCode];
 
             if (concept && concept.measurements && concept.measurements.length > 0) {
-                // Escribir la línea principal ~M
+                // Escribir solo la cabecera (posición/propiedades + total): si el
+                // registro original traía sus sublíneas en la misma línea física
+                // (parts[4] en adelante), conservarlas aquí las duplicaría con las
+                // nuevas escritas justo debajo, corrompiendo el ~M reconstruido
                 const totalSum = getMeasurementTotal(concept);
-                parts[3] = totalSum.toFixed(3);
-                modifiedLines.push(parts.join('|'));
+                modifiedLines.push(`~M|${parts[1]}|${parts[2] || ''}|${totalSum.toFixed(3)}|`);
 
                 // Escribir las sublíneas de mediciones editadas
                 buildMeasurementSublines(concept).forEach(subline => modifiedLines.push(subline));
@@ -2071,34 +2094,169 @@ function generateModifiedBC3() {
     return modifiedLines.join('\r\n');
 }
 
-// Botón Guardar
-const saveBtn = document.getElementById('saveBtn');
-if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-        if (!parsedData) {
-            alert("No hay datos de archivo cargados.");
-            return;
+// Generación de un BC3 de certificación: reutiliza la estructura del
+// presupuesto (capítulos, partidas, descomposiciones) pero sustituye la
+// medición de cada partida certificable por su cantidad certificada a origen
+// del mes indicado, para poder intercambiar la certificación con otros
+// programas FIEBDC-3 (Presto, Arquímedes, etc.).
+function generateCertificationBC3(month, explicitCertificationNumber = null) {
+    if (!parsedData || !originalFileText) return "";
+
+    const certData = JSON.parse(JSON.stringify(parsedData));
+    getCertifiableItems().forEach(item => {
+        const concept = certData.concepts[item.code];
+        if (!concept) return;
+        const originQty = certOriginQty(item.code, month);
+        // getMeasurementTotal() prefiere concept.quantity si es finito, así
+        // que fijarlo garantiza que el ~M generado lleve la cantidad exacta
+        concept.quantity = originQty;
+        concept.measurements = [{ label: 'Certificado a origen', units: originQty, l: '', w: '', h: '' }];
+    });
+
+    // Reutilizar el motor de generación de BC3 operando temporalmente sobre
+    // los datos de certificación, sin alterar el estado real del presupuesto
+    const liveData = parsedData;
+    parsedData = certData;
+    let text;
+    try {
+        text = generateModifiedBC3();
+    } finally {
+        parsedData = liveData;
+    }
+    if (!text) return text;
+
+    // Marcar la cabecera ~V con el número de certificación y el mes, para que
+    // el fichero se identifique como certificación al abrirlo en otro programa.
+    // Campos del ~V: ~V|Propietario|Formato|Programa|Descripción|Codificación|Tipo|Nivel|
+    const lines = text.split(/\r\n/);
+    if (lines[0] && lines[0].startsWith('~V|')) {
+        const parts = lines[0].split('|');
+        const certNumber = explicitCertificationNumber || getCertNumberForMonth(month);
+        const certTag = `Certificación nº ${certNumber} (${certMonthLabel(month)})`;
+        if (parts.length > 4) {
+            const baseDesc = parts[4] || '';
+            parts[4] = sanitizeBC3Field(baseDesc ? `${baseDesc} — ${certTag}` : certTag);
         }
-        const content = generateModifiedBC3();
-        if (!content) {
-            alert("Error al generar el archivo modificado.");
-            return;
+        if (parts.length > 6) parts[6] = 'Certificacion';
+        lines[0] = parts.join('|');
+    }
+    return lines.join('\r\n');
+}
+
+function projectBaseName() {
+    return currentFileName.replace(/\.(bc3|sysmed)$/i, '') || 'proyecto';
+}
+
+function triggerBlobDownload(blob, fileName) {
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function exportBudgetToBC3() {
+    if (!parsedData) {
+        alert('No hay datos de archivo cargados.');
+        return false;
+    }
+    const content = generateModifiedBC3();
+    if (!content) {
+        alert('Error al generar el archivo modificado.');
+        return false;
+    }
+    triggerBlobDownload(
+        new Blob([content], { type: 'text/plain;charset=utf-8' }),
+        `${projectBaseName()}_modificado.bc3`
+    );
+    showNotification('Presupuesto BC3 exportado');
+    return true;
+}
+
+async function saveSysMed() {
+    if (!parsedData) {
+        alert('No hay datos de archivo cargados.');
+        return false;
+    }
+
+    const budgetContent = generateModifiedBC3();
+    if (!budgetContent) {
+        alert('Error al generar la medición BC3 del proyecto.');
+        return false;
+    }
+
+    const months = getStoredCertificationMonths();
+    const formData = new FormData();
+    formData.append('medicion', new Blob([budgetContent], { type: 'text/plain;charset=utf-8' }), 'medicion.bc3');
+    formData.append('budget_original_name', currentBudgetFileName || `${projectBaseName()}.bc3`);
+    formData.append('download_name', projectBaseName());
+    formData.append('project_name', parsedData.properties?.description || projectBaseName());
+    formData.append('certification_periods', JSON.stringify(months));
+
+    if (currentSysMedManifest?.packageId) {
+        formData.append('package_id', currentSysMedManifest.packageId);
+        formData.append('revision', String((parseInt(currentSysMedManifest.revision) || 0) + 1));
+        if (currentSysMedManifest.createdAt) formData.append('created_at', currentSysMedManifest.createdAt);
+    }
+
+    months.forEach((month, index) => {
+        const content = generateCertificationBC3(month, index + 1);
+        formData.append(
+            'certifications[]',
+            new Blob([content], { type: 'text/plain;charset=utf-8' }),
+            `Certificacion${index + 1}.bc3`
+        );
+    });
+
+    const saveButton = document.getElementById('saveBtn');
+    const previousText = saveButton ? saveButton.textContent : '';
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = 'Guardando...';
+    }
+
+    try {
+        const response = await fetch('sysmed.php', { method: 'POST', body: formData });
+        if (!response.ok) {
+            let message = 'No se ha podido generar el archivo SYSmed.';
+            try {
+                const errorResult = await response.json();
+                if (errorResult.error) message = errorResult.error;
+            } catch (error) { /* respuesta no JSON */ }
+            throw new Error(message);
         }
 
-        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-        const link = document.createElement("a");
-        
-        const baseName = currentFileName.replace(/\.[^/.]+$/, "");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${baseName}_modificado.bc3`;
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-        showNotification('Archivo BC3 guardado');
-    });
+        const blob = await response.blob();
+        triggerBlobDownload(blob, `${projectBaseName()}.sysmed`);
+        currentSysMedManifest = {
+            ...(currentSysMedManifest || {}),
+            packageId: response.headers.get('X-SysMed-Package-Id') || currentSysMedManifest?.packageId,
+            revision: parseInt(response.headers.get('X-SysMed-Revision')) || 1,
+            createdAt: response.headers.get('X-SysMed-Created-At') || currentSysMedManifest?.createdAt,
+            budget: { originalName: currentBudgetFileName }
+        };
+        scheduleSessionAutosave();
+        showNotification(`Proyecto SYSmed guardado con ${months.length} certificación${months.length === 1 ? '' : 'es'}`);
+        return true;
+    } catch (error) {
+        console.error(error);
+        alert(error.message || 'No se ha podido guardar el archivo SYSmed.');
+        return false;
+    } finally {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = previousText;
+        }
+    }
 }
+
+// Guardar proyecto completo en SYSmed; el BC3 individual sigue disponible
+// desde Exportar para mantener la interoperabilidad anterior.
+const saveBtn = document.getElementById('saveBtn');
+if (saveBtn) saveBtn.addEventListener('click', saveSysMed);
 
 // Función para exportar a PDF (DIN A4 esquematizado)
 function exportToPdf() {
@@ -2359,8 +2517,9 @@ if (dragOverlay) {
         const files = e.dataTransfer.files;
         if (files && files.length > 0) {
             const file = files[0];
-            if (!file.name.endsWith('.bc3')) {
-                alert('Por favor, selecciona un archivo con extensión .bc3');
+            const lowerName = file.name.toLowerCase();
+            if (!lowerName.endsWith('.bc3') && !lowerName.endsWith('.sysmed')) {
+                alert('Por favor, selecciona un archivo con extensión .bc3 o .sysmed');
                 return;
             }
 
@@ -2898,6 +3057,15 @@ window.addEventListener('click', (e) => {
 
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const exportExcelBtn = document.getElementById('exportExcelBtn');
+const exportBudgetBc3Btn = document.getElementById('exportBudgetBc3Btn');
+
+if (exportBudgetBc3Btn) {
+    exportBudgetBc3Btn.addEventListener('click', () => {
+        const expDrop = document.getElementById('exportDropdown');
+        if (expDrop) expDrop.classList.remove('show');
+        exportBudgetToBC3();
+    });
+}
 
 if (exportPdfBtn) {
     exportPdfBtn.addEventListener('click', () => {
@@ -2925,6 +3093,108 @@ function closeModal(modalEl) {
     if (!modalEl) return;
     modalEl.style.display = 'none';
     modalEl.classList.add('is-hidden');
+}
+
+// Cierre del proyecto actual con guardado contextual: un BC3 si solo existe
+// el presupuesto, o el contenedor SYSmed si hay certificaciones mensuales.
+const closeProjectBtn = document.getElementById('closeProjectBtn');
+const closeProjectModal = document.getElementById('closeProjectModal');
+const closeProjectDismissBtn = document.getElementById('closeProjectDismissBtn');
+const closeProjectCancelBtn = document.getElementById('closeProjectCancelBtn');
+const closeProjectDiscardBtn = document.getElementById('closeProjectDiscardBtn');
+const closeProjectSaveBtn = document.getElementById('closeProjectSaveBtn');
+const closeProjectFormat = document.getElementById('closeProjectFormat');
+const closeProjectMessage = document.getElementById('closeProjectMessage');
+let closeProjectPreviousFocus = null;
+
+function getCloseProjectSaveMode() {
+    const certificationCount = getStoredCertificationMonths().length;
+    return {
+        certificationCount,
+        format: certificationCount > 0 ? 'sysmed' : 'bc3'
+    };
+}
+
+function openCloseProjectDialog() {
+    if (!parsedData || !closeProjectModal) return;
+    const mode = getCloseProjectSaveMode();
+    const hasCertifications = mode.format === 'sysmed';
+    closeProjectPreviousFocus = document.activeElement;
+
+    if (closeProjectFormat) {
+        closeProjectFormat.textContent = hasCertifications
+            ? `${mode.certificationCount} certificación${mode.certificationCount === 1 ? '' : 'es'} · Guardar en SYSmed`
+            : 'Solo presupuesto y mediciones · Guardar en BC3';
+        closeProjectFormat.classList.toggle('is-sysmed', hasCertifications);
+    }
+    if (closeProjectMessage) {
+        closeProjectMessage.textContent = hasCertifications
+            ? 'Para conservar el presupuesto y todas sus certificaciones, guarda el proyecto completo en SYSmed antes de cerrar.'
+            : 'Este archivo no contiene certificaciones. Guarda el presupuesto y sus mediciones en BC3 antes de cerrar.';
+    }
+    if (closeProjectSaveBtn) {
+        closeProjectSaveBtn.textContent = hasCertifications ? 'Guardar SYSmed y cerrar' : 'Guardar BC3 y cerrar';
+        closeProjectSaveBtn.dataset.saveFormat = mode.format;
+    }
+
+    openModal(closeProjectModal);
+    setTimeout(() => closeProjectSaveBtn?.focus(), 0);
+}
+
+function dismissCloseProjectDialog() {
+    closeModal(closeProjectModal);
+    if (closeProjectPreviousFocus && typeof closeProjectPreviousFocus.focus === 'function') {
+        closeProjectPreviousFocus.focus();
+    }
+}
+
+function closeCurrentProject() {
+    if (!parsedData) return;
+    clearTimeout(sessionAutosaveTimer);
+    const closingFileName = currentFileName;
+
+    try { localStorage.removeItem(sessionStorageKey(closingFileName)); } catch (error) { /* ignorar */ }
+    try { localStorage.removeItem(certStorageKey()); } catch (error) { /* ignorar */ }
+    setRecentSessions(getRecentSessions().filter(entry => entry.name !== closingFileName));
+
+    // Evitar que pagehide vuelva a guardar la sesión que acabamos de cerrar.
+    parsedData = null;
+    try { sessionStorage.setItem(CLOSE_SKIP_AUTORESTORE_KEY, '1'); } catch (error) { /* ignorar */ }
+    window.location.reload();
+}
+
+if (closeProjectBtn) closeProjectBtn.addEventListener('click', openCloseProjectDialog);
+if (closeProjectDismissBtn) closeProjectDismissBtn.addEventListener('click', dismissCloseProjectDialog);
+if (closeProjectCancelBtn) closeProjectCancelBtn.addEventListener('click', dismissCloseProjectDialog);
+if (closeProjectDiscardBtn) closeProjectDiscardBtn.addEventListener('click', closeCurrentProject);
+
+if (closeProjectSaveBtn) {
+    closeProjectSaveBtn.addEventListener('click', async () => {
+        const mode = getCloseProjectSaveMode();
+        const previousText = closeProjectSaveBtn.textContent;
+        closeProjectSaveBtn.disabled = true;
+        closeProjectSaveBtn.textContent = mode.format === 'sysmed' ? 'Guardando SYSmed...' : 'Guardando BC3...';
+
+        const saved = mode.format === 'sysmed'
+            ? await saveSysMed()
+            : exportBudgetToBC3();
+
+        if (saved) {
+            // Dar tiempo al navegador a aceptar la descarga antes de recargar.
+            await new Promise(resolve => setTimeout(resolve, 300));
+            closeCurrentProject();
+            return;
+        }
+
+        closeProjectSaveBtn.disabled = false;
+        closeProjectSaveBtn.textContent = previousText;
+    });
+}
+
+if (closeProjectModal) {
+    closeProjectModal.addEventListener('click', event => {
+        if (event.target === closeProjectModal) dismissCloseProjectDialog();
+    });
 }
 
 // Dashboard modal toggling
@@ -3027,6 +3297,10 @@ if (clearCompareBtn) {
 
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (closeProjectModal && getComputedStyle(closeProjectModal).display !== 'none') {
+        dismissCloseProjectDialog();
+        return;
+    }
     [dashboardModal, compareModal, planningModal].forEach(modalEl => {
         if (modalEl && getComputedStyle(modalEl).display !== 'none') {
             closeModal(modalEl);
@@ -3069,6 +3343,7 @@ if (expandAllBtn) {
         }
 
         renderCurrentLevel();
+        scheduleSessionAutosave();
     });
 }
 
@@ -4135,6 +4410,7 @@ function setNodeExpansion(container, expand) {
     }
     updateExpandAllButtonState();
     refreshTreeTabStops(row);
+    scheduleSessionAutosave();
 }
 
 const treeKeyboardHost = document.getElementById('treeContent');
@@ -4235,6 +4511,7 @@ if (searchTermInput) {
 
 const SESSION_INDEX_KEY = 'bc3_recentFiles';
 const SESSION_MAX_RECENT = 5;
+const CLOSE_SKIP_AUTORESTORE_KEY = 'bc3_skipAutoRestoreOnce';
 let sessionAutosaveTimer = null;
 
 function sessionStorageKey(fileName) {
@@ -4275,11 +4552,60 @@ function pruneSessions(keepKey = null, maxEntries = SESSION_MAX_RECENT) {
     setRecentSessions(recents);
 }
 
+// Estado de interfaz para reabrir el presupuesto "por donde iba":
+// nodos expandidos, scroll del árbol, nivel de navegación móvil y pestaña activa
+function captureSessionUi() {
+    const treeContent = document.getElementById('treeContent');
+    const certView = document.getElementById('certView');
+    return {
+        expanded: Array.from(expandedNodes),
+        treeScroll: treeContent ? treeContent.scrollTop : 0,
+        currentLevel: currentLevel,
+        navigationStack: navigationStack,
+        view: (certView && !certView.classList.contains('is-hidden')) ? 'cert' : 'budget',
+        certMonth: certCurrentMonth
+    };
+}
+
+function applySessionUi(ui) {
+    if (!ui || !parsedData) return;
+
+    // Navegación móvil por niveles
+    if (isMobileMode() && ui.currentLevel && parsedData.concepts[ui.currentLevel]) {
+        navigationStack = Array.isArray(ui.navigationStack) ? ui.navigationStack : [];
+        currentLevel = ui.currentLevel;
+    }
+
+    // Nodos expandidos (solo los que sigan existiendo)
+    if (Array.isArray(ui.expanded) && ui.expanded.length > 0) {
+        expandedNodes.clear();
+        ui.expanded.forEach(code => {
+            if (parsedData.concepts[code]) expandedNodes.add(code);
+        });
+    }
+    renderCurrentLevel();
+    updateExpandAllButtonState();
+
+    const treeContent = document.getElementById('treeContent');
+    if (treeContent && ui.treeScroll) treeContent.scrollTop = ui.treeScroll;
+
+    // Pestaña activa y mes de certificación
+    if (ui.certMonth) certCurrentMonth = ui.certMonth;
+    if (ui.view === 'cert') switchView('cert');
+}
+
 function saveSessionNow() {
     if (!parsedData) return;
     const key = sessionStorageKey(currentFileName);
     const savedAt = new Date().toISOString();
-    const payload = JSON.stringify({ name: currentFileName, savedAt, data: parsedData });
+    const payload = JSON.stringify({
+        name: currentFileName,
+        budgetFileName: currentBudgetFileName,
+        sysmedManifest: currentSysMedManifest,
+        savedAt,
+        data: parsedData,
+        ui: captureSessionUi()
+    });
 
     try {
         localStorage.setItem(key, payload);
@@ -4324,8 +4650,12 @@ function restoreSession(fileName) {
         return;
     }
     currentFileName = saved.name;
+    currentBudgetFileName = saved.budgetFileName || saved.sysmedManifest?.budget?.originalName || saved.name.replace(/\.sysmed$/i, '.bc3');
+    currentSysMedManifest = saved.sysmedManifest || null;
     setSelectedFileName(currentFileName);
+    certLoad();
     renderApp(saved.data);
+    applySessionUi(saved.ui);
     showNotification('Sesión recuperada: ' + saved.name);
 }
 
@@ -4646,8 +4976,10 @@ function openStructureMenuForNode(code, parentCode, anchor) {
 // por fichero (mismo patrón que el Gantt): certificación del período,
 // a origen y pendiente, con exportación a PDF y Excel.
 
-// Estado: { certs: { [códigoPartida]: { 'YYYY-MM': cantidadCertificada } } }
-let certState = { certs: {} };
+// Estado: meses de certificación existentes y cantidades de cada período.
+// Separar `months` permite conservar también una certificación sin variación.
+// { months: ['YYYY-MM'], certs: { [códigoPartida]: { 'YYYY-MM': cantidad } } }
+let certState = { months: [], certs: {} };
 let certCurrentMonth = getDefaultCertMonth();
 
 function getDefaultCertMonth() {
@@ -4668,12 +5000,82 @@ function certSave() {
 function certLoad() {
     try {
         const raw = localStorage.getItem(certStorageKey());
-        certState = raw ? JSON.parse(raw) : { certs: {} };
-        if (!certState || typeof certState !== 'object') certState = { certs: {} };
+        certState = raw ? JSON.parse(raw) : { months: [], certs: {} };
+        if (!certState || typeof certState !== 'object') certState = { months: [], certs: {} };
         if (!certState.certs) certState.certs = {};
+        const knownMonths = new Set(Array.isArray(certState.months) ? certState.months : []);
+        Object.values(certState.certs).forEach(byMonth => {
+            if (!byMonth || typeof byMonth !== 'object') return;
+            Object.keys(byMonth).forEach(month => knownMonths.add(month));
+        });
+        certState.months = Array.from(knownMonths).filter(month => /^\d{4}-\d{2}$/.test(month)).sort();
     } catch (e) {
-        certState = { certs: {} };
+        certState = { months: [], certs: {} };
     }
+}
+
+function registerCertificationMonth(month) {
+    if (!/^\d{4}-\d{2}$/.test(month)) return;
+    if (!Array.isArray(certState.months)) certState.months = [];
+    if (!certState.months.includes(month)) {
+        certState.months.push(month);
+        certState.months.sort();
+    }
+}
+
+function getStoredCertificationMonths() {
+    const months = new Set(Array.isArray(certState.months) ? certState.months : []);
+    Object.values(certState.certs).forEach(byMonth => {
+        if (!byMonth || typeof byMonth !== 'object') return;
+        Object.entries(byMonth).forEach(([month, value]) => {
+            if (/^\d{4}-\d{2}$/.test(month) && Number.isFinite(parseFloat(value)) && Math.abs(parseFloat(value)) > 0.0000001) {
+                months.add(month);
+            }
+        });
+    });
+    return Array.from(months).sort();
+}
+
+// Reconstruye las cantidades de cada período restando los acumulados a origen
+// de los BC3 incluidos en el paquete. El SYSmed sustituye completamente el
+// estado local anterior para evitar mezclar certificaciones de dos proyectos.
+function applyLoadedSysMed(sysmed) {
+    const manifest = sysmed?.manifest && typeof sysmed.manifest === 'object' ? sysmed.manifest : {};
+    const certifications = Array.isArray(sysmed?.certifications)
+        ? [...sysmed.certifications].sort((a, b) => String(a.month).localeCompare(String(b.month)))
+        : [];
+
+    currentSysMedManifest = manifest;
+    currentBudgetFileName = manifest.budget?.originalName || `${projectBaseName()}.bc3`;
+    certState = { months: certifications.map(certification => String(certification.month)), certs: {} };
+
+    const previousOrigin = {};
+    const items = getCertifiableItems();
+    certifications.forEach(certification => {
+        const month = String(certification.month || '');
+        if (!/^\d{4}-\d{2}$/.test(month)) return;
+        const quantities = certification.quantities && typeof certification.quantities === 'object'
+            ? certification.quantities
+            : {};
+
+        items.forEach(item => {
+            const hasQuantity = Object.prototype.hasOwnProperty.call(quantities, item.code);
+            const parsedOrigin = hasQuantity ? parseFloat(quantities[item.code]) : previousOrigin[item.code];
+            const origin = Number.isFinite(parsedOrigin) ? parsedOrigin : (previousOrigin[item.code] || 0);
+            const periodQuantity = Math.round((origin - (previousOrigin[item.code] || 0)) * 1000000) / 1000000;
+            if (Math.abs(periodQuantity) > 0.0000001) {
+                if (!certState.certs[item.code]) certState.certs[item.code] = {};
+                certState.certs[item.code][month] = periodQuantity;
+            }
+            previousOrigin[item.code] = origin;
+        });
+    });
+
+    certCurrentMonth = certifications.length > 0
+        ? String(certifications[certifications.length - 1].month)
+        : getDefaultCertMonth();
+    certSave();
+    scheduleSessionAutosave();
 }
 
 // Partidas certificables: hojas del árbol con su cantidad presupuestada acumulada
@@ -4725,11 +5127,107 @@ function certOriginQty(code, uptoMonth) {
         .reduce((sum, month) => sum + (parseFloat(byMonth[month]) || 0), 0);
 }
 
+// Cantidad certificada a origen estrictamente ANTES del mes indicado (lo ya
+// certificado en meses previos, sin contar el propio mes)
+function certOriginQtyBefore(code, month) {
+    const byMonth = certState.certs[code];
+    if (!byMonth) return 0;
+    return Object.keys(byMonth)
+        .filter(m => m < month)
+        .reduce((sum, m) => sum + (parseFloat(byMonth[m]) || 0), 0);
+}
+
+// Número correlativo según el orden cronológico de las pestañas visibles.
+function getCertNumberForMonth(month) {
+    const visibleMonths = getCertificationMonths();
+    const index = visibleMonths.indexOf(month);
+    if (index >= 0) return index + 1;
+    return visibleMonths.filter(visibleMonth => visibleMonth < month).length + 1;
+}
+
 function certMonthLabel(month) {
     const d = new Date(month + '-01T00:00:00');
     if (isNaN(d.getTime())) return month;
     const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function certMonthShortLabel(month) {
+    const d = new Date(month + '-01T00:00:00');
+    if (isNaN(d.getTime())) return month;
+    const label = d.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }).replace('.', '');
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// Meses que ya contienen una certificación, más el mes que el usuario está
+// abriendo o creando ahora. Se muestran en orden cronológico como pestañas.
+function getCertificationMonths() {
+    const months = new Set([certCurrentMonth, ...(Array.isArray(certState.months) ? certState.months : [])]);
+    Object.values(certState.certs).forEach(byMonth => {
+        if (!byMonth || typeof byMonth !== 'object') return;
+        Object.keys(byMonth).forEach(month => {
+            if (/^\d{4}-\d{2}$/.test(month)) months.add(month);
+        });
+    });
+    return Array.from(months).sort();
+}
+
+function renderCertMonthTabs() {
+    const tabs = document.getElementById('certMonthTabs');
+    const panel = document.getElementById('certMonthPanel');
+    if (!tabs) return;
+
+    tabs.innerHTML = '';
+    const months = getCertificationMonths();
+
+    months.forEach((month, index) => {
+        const isActive = month === certCurrentMonth;
+        const certNumber = getCertNumberForMonth(month);
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.id = 'certMonthTab-' + month;
+        tab.className = 'cert-month-tab' + (isActive ? ' is-active' : '');
+        tab.dataset.month = month;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', String(isActive));
+        tab.setAttribute('aria-controls', 'certMonthPanel');
+        tab.tabIndex = isActive ? 0 : -1;
+        tab.title = `Certificación nº ${certNumber} · ${certMonthLabel(month)}`;
+        tab.innerHTML = `
+            <span class="cert-month-tab-number">Cert. ${certNumber}</span>
+            <span class="cert-month-tab-label">${certMonthShortLabel(month)}</span>
+        `;
+        tab.addEventListener('click', () => selectCertMonth(month));
+        tab.addEventListener('keydown', event => {
+            let nextIndex = null;
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % months.length;
+            if (event.key === 'ArrowLeft') nextIndex = (index - 1 + months.length) % months.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = months.length - 1;
+            if (nextIndex === null) return;
+            event.preventDefault();
+            selectCertMonth(months[nextIndex], true);
+        });
+        tabs.appendChild(tab);
+    });
+
+    if (panel) panel.setAttribute('aria-labelledby', 'certMonthTab-' + certCurrentMonth);
+}
+
+function selectCertMonth(month, focusTab = false) {
+    if (!/^\d{4}-\d{2}$/.test(month)) return;
+    certCurrentMonth = month;
+    registerCertificationMonth(month);
+    certSave();
+    if (certMonthInput) certMonthInput.value = month;
+    rebuildCertTable();
+    scheduleSessionAutosave();
+
+    const activeTab = document.getElementById('certMonthTab-' + month);
+    if (activeTab) {
+        activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        if (focusTab) activeTab.focus();
+    }
 }
 
 // Filas calculadas de la certificación del mes seleccionado
@@ -4762,16 +5260,85 @@ function updateCertSummary(rows) {
     `;
 }
 
+// ---- Árbol de certificación ----
+// La vista de certificaciones replica la jerarquía del presupuesto: capítulos
+// plegables con importes agregados y partidas hoja con cantidad editable.
+// Cada partida aparece una sola vez (en su primera posición del árbol) con la
+// cantidad presupuestada agregada, igual que en getCertifiableItems().
+let certCollapsed = new Set();
+let certChapterCodes = [];
+
+function buildCertTree() {
+    if (!parsedData) return [];
+    const itemsByCode = new Map(getCertifiableItems().map(item => [item.code, item]));
+    const placed = new Set();
+
+    function walk(code, depth) {
+        const concept = parsedData.concepts[code];
+        if (!concept) return null;
+        const isChapter = String(concept.code).endsWith('#') || concept.is_root === true;
+        if (!isChapter) {
+            if (placed.has(code) || !itemsByCode.has(code)) return null;
+            placed.add(code);
+            return { isChapter: false, depth, item: itemsByCode.get(code) };
+        }
+        const children = [];
+        getConceptDecomposition(concept).forEach(child => {
+            const node = walk(child.code, depth + 1);
+            if (node) children.push(node);
+        });
+        if (children.length === 0) return null;
+        return {
+            isChapter: true,
+            depth,
+            code,
+            cleanCode: String(code).replace(/#+\s*$/, ''),
+            summary: concept.summary || code,
+            children
+        };
+    }
+
+    // El nodo raíz no se pinta como fila: sus capítulos son el primer nivel
+    const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+    const tree = [];
+    roots.forEach(rootCode => {
+        const rootConcept = parsedData.concepts[rootCode];
+        if (!rootConcept) return;
+        getConceptDecomposition(rootConcept).forEach(child => {
+            const node = walk(child.code, 0);
+            if (node) tree.push(node);
+        });
+    });
+    return tree;
+}
+
+function certTreeLeaves(node) {
+    if (!node.isChapter) return [node.item];
+    return node.children.flatMap(certTreeLeaves);
+}
+
+function updateCertExpandAllLabel() {
+    const btn = document.getElementById('certExpandAllBtn');
+    if (!btn) return;
+    const anyCollapsed = certCollapsed.size > 0;
+    btn.textContent = anyCollapsed ? 'Expandir todo' : 'Contraer todo';
+    btn.setAttribute('aria-pressed', String(!anyCollapsed));
+}
+
 function rebuildCertTable() {
     const wrap = document.getElementById('certTableWrap');
     if (!wrap) return;
+    renderCertMonthTabs();
     wrap.innerHTML = '';
 
-    const rows = buildCertRows();
-    updateCertSummary(rows);
+    updateCertSummary(buildCertRows());
 
-    if (rows.length === 0) {
+    const tree = buildCertTree();
+    certChapterCodes = [];
+
+    if (tree.length === 0) {
         wrap.innerHTML = '<div class="cert-empty">No hay partidas certificables en este presupuesto.</div>';
+        updateCertExpandAllLabel();
         return;
     }
 
@@ -4781,7 +5348,7 @@ function rebuildCertTable() {
         <thead>
             <tr>
                 <th>Código</th>
-                <th>Partida</th>
+                <th>Capítulo / Partida</th>
                 <th class="numeric">Ud</th>
                 <th class="numeric">Cant. presup.</th>
                 <th class="numeric">Precio</th>
@@ -4795,78 +5362,164 @@ function rebuildCertTable() {
     `;
 
     const tbody = document.createElement('tbody');
+    const chapterPainters = [];
+    const fmtEur = v => v.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+    const numericTd = () => {
+        const td = document.createElement('td');
+        td.className = 'numeric';
+        return td;
+    };
 
-    rows.forEach(rowData => {
+    function applyCertCollapse() {
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const ancestors = tr.dataset.ancestors ? tr.dataset.ancestors.split('|') : [];
+            tr.classList.toggle('is-hidden', ancestors.some(code => certCollapsed.has(code)));
+        });
+        tbody.querySelectorAll('.cert-tree-toggle').forEach(btn => {
+            const collapsed = certCollapsed.has(btn.dataset.chapterCode);
+            btn.classList.toggle('is-collapsed', collapsed);
+            btn.setAttribute('aria-expanded', String(!collapsed));
+        });
+        updateCertExpandAllLabel();
+    }
+
+    function renderChapterRow(node, ancestors) {
+        certChapterCodes.push(node.code);
         const tr = document.createElement('tr');
+        tr.className = 'cert-chapter-row';
+        if (ancestors.length > 0) tr.dataset.ancestors = ancestors.join('|');
 
         const tdCode = document.createElement('td');
-        tdCode.textContent = rowData.cleanCode;
+        tdCode.className = 'cert-code-cell';
+        tdCode.style.paddingLeft = (12 + node.depth * 18) + 'px';
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'cert-tree-toggle';
+        toggle.dataset.chapterCode = node.code;
+        toggle.innerHTML = iconSvg('chevron-down');
+        toggle.setAttribute('aria-label', 'Contraer o expandir ' + node.cleanCode);
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.addEventListener('click', () => {
+            if (certCollapsed.has(node.code)) certCollapsed.delete(node.code);
+            else certCollapsed.add(node.code);
+            applyCertCollapse();
+        });
+        tdCode.appendChild(toggle);
+        tdCode.appendChild(document.createTextNode(node.cleanCode));
 
         const tdSummary = document.createElement('td');
         tdSummary.className = 'cert-cell-summary';
-        tdSummary.textContent = rowData.summary;
-        tdSummary.title = rowData.summary;
+        tdSummary.textContent = node.summary;
+        tdSummary.title = node.summary;
 
-        const tdUnit = document.createElement('td');
-        tdUnit.className = 'numeric';
-        tdUnit.textContent = rowData.unit;
+        const tdUnit = numericTd();
+        const tdQty = numericTd();
+        const tdPrice = numericTd();
+        const tdInput = numericTd();
+        tdInput.classList.add('cert-col-input');
+        const tdMonthAmount = numericTd();
+        const tdOriginQty = numericTd();
+        const tdOriginPct = numericTd();
+        const tdPending = numericTd();
 
-        const tdQty = document.createElement('td');
-        tdQty.className = 'numeric';
-        tdQty.textContent = rowData.qty.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+        const leaves = certTreeLeaves(node);
+        const paint = () => {
+            let month = 0, origin = 0, budget = 0;
+            leaves.forEach(item => {
+                const monthQty = parseFloat(certState.certs[item.code]?.[certCurrentMonth]) || 0;
+                const originQty = certOriginQty(item.code, certCurrentMonth);
+                month += monthQty * item.price;
+                origin += originQty * item.price;
+                budget += item.qty * item.price;
+            });
+            tdMonthAmount.textContent = fmtEur(month);
+            tdOriginPct.textContent = (budget === 0 ? 0 : (origin / budget) * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
+            tdPending.textContent = fmtEur(budget - origin);
+        };
+        chapterPainters.push(paint);
+        paint();
 
-        const tdPrice = document.createElement('td');
-        tdPrice.className = 'numeric';
-        tdPrice.textContent = rowData.price.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+        [tdCode, tdSummary, tdUnit, tdQty, tdPrice, tdInput, tdMonthAmount, tdOriginQty, tdOriginPct, tdPending]
+            .forEach(td => tr.appendChild(td));
+        tbody.appendChild(tr);
+
+        const childAncestors = ancestors.concat(node.code);
+        node.children.forEach(child => renderNode(child, childAncestors));
+    }
+
+    function renderItemRow(node, ancestors) {
+        const item = node.item;
+        const budgetAmount = item.qty * item.price;
+        const monthQtyStored = parseFloat(certState.certs[item.code]?.[certCurrentMonth]) || 0;
+        const tr = document.createElement('tr');
+        if (ancestors.length > 0) tr.dataset.ancestors = ancestors.join('|');
+
+        const tdCode = document.createElement('td');
+        tdCode.className = 'cert-code-cell';
+        tdCode.style.paddingLeft = (12 + node.depth * 18 + 24) + 'px';
+        tdCode.appendChild(document.createTextNode(item.cleanCode));
+
+        const tdSummary = document.createElement('td');
+        tdSummary.className = 'cert-cell-summary';
+        tdSummary.textContent = item.summary;
+        tdSummary.title = item.summary;
+
+        const tdUnit = numericTd();
+        tdUnit.textContent = item.unit;
+
+        const tdQty = numericTd();
+        tdQty.textContent = item.qty.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+
+        const tdPrice = numericTd();
+        tdPrice.textContent = fmtEur(item.price);
 
         // Cantidad certificada en el mes seleccionado (editable)
-        const tdInput = document.createElement('td');
-        tdInput.className = 'numeric cert-col-input';
+        const tdInput = numericTd();
+        tdInput.classList.add('cert-col-input');
         const input = document.createElement('input');
         input.type = 'number';
         input.className = 'cert-input';
         input.min = '0';
         input.step = 'any';
-        input.value = rowData.monthQty || '';
+        input.value = monthQtyStored || '';
         input.placeholder = '0';
-        input.setAttribute('aria-label', 'Cantidad certificada de ' + rowData.cleanCode + ' en ' + certMonthLabel(certCurrentMonth));
+        input.setAttribute('aria-label', 'Cantidad certificada de ' + item.cleanCode + ' en ' + certMonthLabel(certCurrentMonth));
 
-        const tdMonthAmount = document.createElement('td');
-        tdMonthAmount.className = 'numeric';
-        const tdOriginQty = document.createElement('td');
-        tdOriginQty.className = 'numeric';
-        const tdOriginPct = document.createElement('td');
-        tdOriginPct.className = 'numeric';
-        const tdPending = document.createElement('td');
-        tdPending.className = 'numeric';
+        const tdMonthAmount = numericTd();
+        const tdOriginQty = numericTd();
+        const tdOriginPct = numericTd();
+        const tdPending = numericTd();
 
         const paintComputedCells = () => {
-            const monthQty = parseFloat(certState.certs[rowData.code]?.[certCurrentMonth]) || 0;
-            const originQty = certOriginQty(rowData.code, certCurrentMonth);
-            const originAmount = originQty * rowData.price;
-            const originPct = rowData.budgetAmount === 0 ? 0 : (originAmount / rowData.budgetAmount) * 100;
+            const monthQty = parseFloat(certState.certs[item.code]?.[certCurrentMonth]) || 0;
+            const originQty = certOriginQty(item.code, certCurrentMonth);
+            const originAmount = originQty * item.price;
+            const originPct = budgetAmount === 0 ? 0 : (originAmount / budgetAmount) * 100;
 
-            tdMonthAmount.textContent = (monthQty * rowData.price).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+            tdMonthAmount.textContent = fmtEur(monthQty * item.price);
             tdOriginQty.textContent = originQty.toLocaleString('es-ES', { maximumFractionDigits: 3 });
             tdOriginPct.textContent = originPct.toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
-            tdPending.textContent = (rowData.budgetAmount - originAmount).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
-            tr.classList.toggle('cert-row-over', originQty > rowData.qty && rowData.qty > 0);
-            tr.classList.toggle('cert-row-done', rowData.qty > 0 && Math.abs(originQty - rowData.qty) < 0.0005);
+            tdPending.textContent = fmtEur(budgetAmount - originAmount);
+            tr.classList.toggle('cert-row-over', originQty > item.qty && item.qty > 0);
+            tr.classList.toggle('cert-row-done', item.qty > 0 && Math.abs(originQty - item.qty) < 0.0005);
         };
 
         input.addEventListener('input', () => {
             const val = parseFloat(String(input.value).replace(',', '.'));
-            if (!certState.certs[rowData.code]) certState.certs[rowData.code] = {};
+            registerCertificationMonth(certCurrentMonth);
+            if (!certState.certs[item.code]) certState.certs[item.code] = {};
             if (isNaN(val) || val <= 0) {
-                delete certState.certs[rowData.code][certCurrentMonth];
-                if (Object.keys(certState.certs[rowData.code]).length === 0) {
-                    delete certState.certs[rowData.code];
+                delete certState.certs[item.code][certCurrentMonth];
+                if (Object.keys(certState.certs[item.code]).length === 0) {
+                    delete certState.certs[item.code];
                 }
             } else {
-                certState.certs[rowData.code][certCurrentMonth] = val;
+                certState.certs[item.code][certCurrentMonth] = val;
             }
             certSave();
             paintComputedCells();
+            chapterPainters.forEach(paintChapter => paintChapter());
             updateCertSummary(buildCertRows());
         });
 
@@ -4876,10 +5529,17 @@ function rebuildCertTable() {
         [tdCode, tdSummary, tdUnit, tdQty, tdPrice, tdInput, tdMonthAmount, tdOriginQty, tdOriginPct, tdPending]
             .forEach(td => tr.appendChild(td));
         tbody.appendChild(tr);
-    });
+    }
 
+    function renderNode(node, ancestors) {
+        if (node.isChapter) renderChapterRow(node, ancestors);
+        else renderItemRow(node, ancestors);
+    }
+
+    tree.forEach(node => renderNode(node, []));
     table.appendChild(tbody);
     wrap.appendChild(table);
+    applyCertCollapse();
 }
 
 // ---- Exportar certificación a Excel ----
@@ -5018,47 +5678,166 @@ function exportCertToPdf() {
     showNotification('Certificación exportada a PDF');
 }
 
-// ---- Eventos del modal de certificaciones ----
-const certBtnEl = document.getElementById('certBtn');
-const certModalEl = document.getElementById('certModal');
-const closeCertBtnEl = document.getElementById('closeCertBtn');
+// ---- Exportar certificación a BC3 (formato FIEBDC-3, intercambiable con
+// otros programas de mediciones y presupuestos) ----
+function exportCertToBC3() {
+    if (!parsedData) { alert('Carga primero un presupuesto BC3.'); return; }
+    const rows = buildCertRows();
+    if (rows.length === 0) { alert('No hay partidas certificables.'); return; }
+
+    const content = generateCertificationBC3(certCurrentMonth);
+    if (!content) { alert('No se ha podido generar el archivo BC3 de certificación.'); return; }
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${baseName}_certificacion_${certCurrentMonth}.bc3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showNotification('Certificación exportada a BC3');
+}
+
+// ---- Importar certificación desde BC3 ----
+// Acepta cualquier BC3 (una certificación exportada desde aquí, desde otro
+// programa FIEBDC-3, o incluso un presupuesto con mediciones actualizadas) y
+// vuelca, para cada partida certificable coincidente por código, la cantidad
+// certificada a origen que contenga el fichero al mes seleccionado: la
+// diferencia con lo ya certificado en meses anteriores se asigna a ese mes.
+async function importCertificationFromBC3(file) {
+    if (!parsedData) { alert('Carga primero un presupuesto BC3.'); return; }
+
+    const formData = new FormData();
+    formData.append('bc3file', file);
+
+    try {
+        const response = await fetch('upload.php', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (!result.success) {
+            alert('Error al leer el archivo de certificación: ' + result.error);
+            return;
+        }
+
+        const importedConcepts = result.data.concepts || {};
+        let updated = 0;
+        let unmatched = 0;
+
+        getCertifiableItems().forEach(item => {
+            const importedConcept = importedConcepts[item.code];
+            if (!importedConcept || !Array.isArray(importedConcept.measurements) || importedConcept.measurements.length === 0) {
+                unmatched++;
+                return;
+            }
+            const importedTotal = getMeasurementTotal(importedConcept);
+            const monthValue = Math.max(0, Math.round((importedTotal - certOriginQtyBefore(item.code, certCurrentMonth)) * 1000) / 1000);
+
+            if (!certState.certs[item.code]) certState.certs[item.code] = {};
+            if (monthValue <= 0) {
+                delete certState.certs[item.code][certCurrentMonth];
+                if (Object.keys(certState.certs[item.code]).length === 0) delete certState.certs[item.code];
+            } else {
+                certState.certs[item.code][certCurrentMonth] = monthValue;
+            }
+            updated++;
+        });
+
+        registerCertificationMonth(certCurrentMonth);
+        certSave();
+        rebuildCertTable();
+        showNotification(`Certificación importada: ${updated} partidas actualizadas` + (unmatched ? `, ${unmatched} sin coincidencia` : ''));
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión con el servidor al importar la certificación');
+    }
+}
+
+// ---- Pestañas Presupuesto / Certificaciones ----
+const tabBudgetEl = document.getElementById('tabBudget');
+const tabCertEl = document.getElementById('tabCert');
+const certViewEl = document.getElementById('certView');
+const contentAreaEl = document.getElementById('contentArea');
 const certMonthInput = document.getElementById('certMonth');
+const certExpandAllBtnEl = document.getElementById('certExpandAllBtn');
 const exportCertExcelBtnEl = document.getElementById('exportCertExcelBtn');
 const exportCertPdfBtnEl = document.getElementById('exportCertPdfBtn');
+const exportCertBc3BtnEl = document.getElementById('exportCertBc3Btn');
+const certImportFileEl = document.getElementById('certImportFile');
 
-if (certBtnEl && certModalEl) {
-    certBtnEl.addEventListener('click', () => {
-        if (!parsedData) { alert('Carga primero un presupuesto BC3.'); return; }
+function switchView(view) {
+    if (!contentAreaEl || !certViewEl) return;
+    const showCert = view === 'cert';
+    contentAreaEl.classList.toggle('is-hidden', showCert);
+    certViewEl.classList.toggle('is-hidden', !showCert);
+    // En móvil permite ocultar la información del presupuesto (PEM/PEC, stats)
+    document.body.classList.toggle('view-cert', showCert);
+    if (tabBudgetEl) {
+        tabBudgetEl.classList.toggle('is-active', !showCert);
+        tabBudgetEl.setAttribute('aria-selected', String(!showCert));
+    }
+    if (tabCertEl) {
+        tabCertEl.classList.toggle('is-active', showCert);
+        tabCertEl.setAttribute('aria-selected', String(showCert));
+    }
+    if (showCert) {
         certLoad();
         if (certMonthInput) certMonthInput.value = certCurrentMonth;
-        openModal(certModalEl);
+        rebuildCertTable();
+    }
+}
+
+if (tabBudgetEl) tabBudgetEl.addEventListener('click', () => switchView('budget'));
+
+if (tabCertEl) {
+    tabCertEl.addEventListener('click', () => {
+        if (!parsedData) { alert('Carga primero un presupuesto BC3.'); return; }
+        switchView('cert');
+    });
+}
+
+if (certExpandAllBtnEl) {
+    certExpandAllBtnEl.addEventListener('click', () => {
+        if (certCollapsed.size > 0) {
+            certCollapsed.clear();
+        } else {
+            certChapterCodes.forEach(code => certCollapsed.add(code));
+        }
         rebuildCertTable();
     });
 }
-
-if (closeCertBtnEl && certModalEl) {
-    closeCertBtnEl.addEventListener('click', () => closeModal(certModalEl));
-}
-
-if (certModalEl) {
-    certModalEl.addEventListener('click', (e) => {
-        if (e.target === certModalEl) closeModal(certModalEl);
-    });
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && certModalEl && getComputedStyle(certModalEl).display !== 'none') {
-        closeModal(certModalEl);
-    }
-});
 
 if (certMonthInput) {
     certMonthInput.addEventListener('change', () => {
         if (!certMonthInput.value) return;
-        certCurrentMonth = certMonthInput.value;
-        rebuildCertTable();
+        selectCertMonth(certMonthInput.value);
     });
 }
 
 if (exportCertExcelBtnEl) exportCertExcelBtnEl.addEventListener('click', exportCertToExcel);
 if (exportCertPdfBtnEl) exportCertPdfBtnEl.addEventListener('click', exportCertToPdf);
+if (exportCertBc3BtnEl) exportCertBc3BtnEl.addEventListener('click', exportCertToBC3);
+
+if (certImportFileEl) {
+    certImportFileEl.addEventListener('change', async () => {
+        const file = certImportFileEl.files[0];
+        certImportFileEl.value = '';
+        if (!file) return;
+        await importCertificationFromBC3(file);
+    });
+}
+
+// ---- Recuperación automática de la última sesión ----
+// Al recargar la web con un presupuesto abierto, se reabre por donde iba:
+// cambios, nodos expandidos, scroll, nivel de navegación y pestaña activa.
+(function autoRestoreLastSession() {
+    if (parsedData) return;
+    try {
+        if (sessionStorage.getItem(CLOSE_SKIP_AUTORESTORE_KEY) === '1') {
+            sessionStorage.removeItem(CLOSE_SKIP_AUTORESTORE_KEY);
+            return;
+        }
+    } catch (error) { /* ignorar */ }
+    const latest = getRecentSessions().find(entry => loadStoredSession(entry.name));
+    if (latest) restoreSession(latest.name);
+})();
