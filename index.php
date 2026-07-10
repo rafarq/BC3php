@@ -49,6 +49,7 @@ header("Pragma: no-cache");
                     </div>
                     <div class="header-action-group" aria-label="Herramientas">
                         <button type="button" id="compareBtn" class="btn btn-secondary compare-btn is-hidden">Comparar</button>
+                        <button type="button" id="certBtn" class="btn btn-secondary cert-btn is-hidden" data-icon="clipboard-check">Certificación</button>
                     </div>
                     <div class="header-action-group header-action-group-last" aria-label="Tema">
                         <button type="button" id="themeToggle" class="btn btn-ghost theme-toggle-btn" data-icon-only="moon" aria-label="Cambiar tema"></button>
@@ -111,29 +112,37 @@ header("Pragma: no-cache");
                 
                 <!-- Barra de Filtros Avanzados -->
                 <div class="filter-bar is-hidden" id="filterBar">
-                    <div class="filter-group">
+                    <div class="filter-group filter-chips">
                         <button type="button" id="expandAllBtn" class="filter-btn" aria-pressed="false">Expandir Todo</button>
                         <button type="button" id="undoBtn" class="filter-btn" data-icon-only="undo-2" disabled aria-label="Deshacer" title="Deshacer (Ctrl/Cmd+Z)">Deshacer</button>
                         <button type="button" id="redoBtn" class="filter-btn" data-icon-only="redo-2" disabled aria-label="Rehacer" title="Rehacer (Ctrl/Cmd+Y o Ctrl/Cmd+Shift+Z)">Rehacer</button>
+                        <button type="button" id="filterSheetToggle" class="filter-btn filter-sheet-toggle" aria-expanded="false" aria-controls="filterSheet">Filtros<span id="filterCountBadge" class="filter-count-badge is-hidden">0</span></button>
                     </div>
-                    <div class="filter-group">
-                        <label for="costFilter">Filtrar por importe:</label>
-                        <select id="costFilter" class="filter-select">
-                            <option value="all">Todas las partidas</option>
-                            <option value="1000">Importe > 1.000 €</option>
-                            <option value="5000">Importe > 5.000 €</option>
-                            <option value="10000">Importe > 10.000 €</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="resourceFilter">Filtrar por recurso:</label>
-                        <select id="resourceFilter" class="filter-select">
-                            <option value="all">Todos los recursos</option>
-                            <option value="mo">Mano de Obra (MO)</option>
-                            <option value="mat">Materiales (MAT)</option>
-                            <option value="maq">Maquinaria (MAQ)</option>
-                            <option value="sub">Subcontratas (SUB)</option>
-                        </select>
+                    <div class="filter-sheet-backdrop" id="filterSheetBackdrop"></div>
+                    <div class="filter-sheet" id="filterSheet">
+                        <div class="filter-sheet-header">
+                            <span class="filter-sheet-title">Filtros</span>
+                            <button type="button" id="closeFilterSheetBtn" class="close-btn" data-icon-only="x" aria-label="Cerrar filtros"></button>
+                        </div>
+                        <div class="filter-group">
+                            <label for="costFilter">Filtrar por importe:</label>
+                            <select id="costFilter" class="filter-select">
+                                <option value="all">Todas las partidas</option>
+                                <option value="1000">Importe > 1.000 €</option>
+                                <option value="5000">Importe > 5.000 €</option>
+                                <option value="10000">Importe > 10.000 €</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="resourceFilter">Filtrar por recurso:</label>
+                            <select id="resourceFilter" class="filter-select">
+                                <option value="all">Todos los recursos</option>
+                                <option value="mo">Mano de Obra (MO)</option>
+                                <option value="mat">Materiales (MAT)</option>
+                                <option value="maq">Maquinaria (MAQ)</option>
+                                <option value="sub">Subcontratas (SUB)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -144,13 +153,16 @@ header("Pragma: no-cache");
                 <div id="treeContent"></div>
             </div>
 
+            <div class="panel-divider" id="panelDivider" role="separator" aria-orientation="vertical" aria-label="Redimensionar panel de detalles" tabindex="0"></div>
+
             <div class="details-panel" id="detailsPanel">
                 <div class="empty-state">Selecciona una partida para ver detalles</div>
                 <div id="detailsContent" class="is-hidden">
                     <header class="details-header">
                         <div class="code-badge" id="detCode"></div>
-                        <h2 id="detSummary"></h2>
                         <div class="price-tag" id="detPrice"></div>
+                        <button type="button" id="closeDetailsBtn" class="close-btn details-close-btn" data-icon-only="x" aria-label="Cerrar panel de detalles"></button>
+                        <h2 id="detSummary"></h2>
                     </header>
 
                     <div class="details-body">
@@ -175,6 +187,7 @@ header("Pragma: no-cache");
                                             <th>Concepto</th>
                                             <th>Precio</th>
                                             <th>Total</th>
+                                            <th class="decomp-col-action" aria-label="Acciones"></th>
                                         </tr>
                                     </thead>
                                     <tbody id="detDecomposition">
@@ -184,6 +197,7 @@ header("Pragma: no-cache");
                                         <tr>
                                             <td colspan="4" class="text-right">Total Partida</td>
                                             <td id="detTotalCost"></td>
+                                            <td class="decomp-col-action"></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -198,7 +212,7 @@ header("Pragma: no-cache");
             <nav class="footer-links" aria-label="Enlaces del proyecto">
                 <a href="https://bc3.sysarq.com/roadmap/" target="_blank" rel="noopener">Roadmap</a>
                 <a href="changelog.php">Changelog</a>
-                <span class="footer-version">V0.3.0 by <a href="https://www.systemarquitectura.com" target="_blank" rel="noopener">System Arquitectura</a></span>
+                <span class="footer-version">V0.4.0 by <a href="https://www.systemarquitectura.com" target="_blank" rel="noopener">System Arquitectura</a></span>
             </nav>
         </footer>
     </div>
@@ -253,6 +267,29 @@ header("Pragma: no-cache");
                     </div>
                     <button type="button" id="clearCompareBtn" class="clear-compare-btn">Quitar Comparación</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Certificaciones / Seguimiento de obra -->
+    <div id="certModal" class="modal is-hidden">
+        <div class="modal-content cert-modal-content">
+            <div class="modal-header">
+                <h3>Certificaciones y Seguimiento de Obra</h3>
+                <button type="button" id="closeCertBtn" class="close-btn" data-icon-only="x" aria-label="Cerrar certificaciones"></button>
+            </div>
+            <div class="modal-body cert-modal-body">
+                <div class="cert-controls">
+                    <label class="cert-month-label">Mes de certificación:
+                        <input type="month" id="certMonth" class="cert-month-input">
+                    </label>
+                    <div class="cert-export-actions">
+                        <button type="button" id="exportCertExcelBtn" class="btn btn-secondary" data-icon="file-spreadsheet">Excel</button>
+                        <button type="button" id="exportCertPdfBtn" class="btn btn-secondary" data-icon="file-text">PDF</button>
+                    </div>
+                </div>
+                <div class="cert-summary" id="certSummary"></div>
+                <div class="cert-table-wrap" id="certTableWrap"></div>
             </div>
         </div>
     </div>

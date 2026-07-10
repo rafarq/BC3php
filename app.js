@@ -9,12 +9,19 @@ const UI_ICONS = {
     'folder-up': '<svg viewBox="0 0 24 24"><path d="M12 10v6"/><path d="m9 13 3-3 3 3"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
     'menu': '<svg viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>',
     'moon': '<svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z"/></svg>',
+    'pencil': '<svg viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
     'redo-2': '<svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>',
     'rotate-ccw': '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
     'settings': '<svg viewBox="0 0 24 24"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.2a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.3a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.3a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.2a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.2a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.3a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.3a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.2a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>',
     'sun': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
     'undo-2': '<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>',
-    'x': '<svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'
+    'x': '<svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+    'plus': '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+    'copy': '<svg viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+    'trash-2': '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
+    'clipboard-check': '<svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>',
+    'history': '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
+    'more-vertical': '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>'
 };
 
 function iconSvg(name, className = 'ui-icon') {
@@ -129,6 +136,26 @@ function enableDoubleClickEditing(el, options = {}) {
         el.contentEditable = 'false';
         el.classList.remove('is-editing');
     });
+
+    // Permite activar la edición desde fuera (p. ej. botón de lápiz en móvil)
+    return { enterEditMode };
+}
+
+// Botón de lápiz explícito para activar la edición en pantallas táctiles,
+// donde el doble toque / pulsación larga es poco descubrible.
+function createEditPencilButton(editableHandle, label) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'edit-pencil-btn';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    btn.innerHTML = iconSvg('pencil');
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        editableHandle.enterEditMode();
+    });
+    return btn;
 }
 
 document.querySelectorAll('[data-icon], [data-icon-only]').forEach(applyIcon);
@@ -361,14 +388,38 @@ function updateBreadcrumbs() {
     // Back button handler
     backBtn.hidden = navigationStack.length === 0;
     backBtn.onclick = () => {
-        if (navigationStack.length > 0) {
-            navigationStack.pop();
-            const newLevel = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1].code : null;
-            mobileNavDirection = 'back';
-            navigateToLevel(newLevel, false); // false = don't push to stack
+        if (navigationStack.length === 0) return;
+        // Si hay entradas de historial propias, retroceder vía history para
+        // mantener sincronizado el botón/gesto "atrás" del navegador
+        if (drillHistoryDepth > 0) {
+            history.back();
+        } else {
+            goBackOneLevel();
         }
     };
 }
+
+// Retroceder un nivel en la navegación drill-down móvil
+function goBackOneLevel() {
+    if (navigationStack.length === 0) return;
+    navigationStack.pop();
+    const newLevel = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1].code : null;
+    mobileNavDirection = 'back';
+    navigateToLevel(newLevel, false); // false = don't push to stack
+}
+
+// Gesto/botón "atrás" del navegador: cada drill-down añade una entrada al
+// historial (history.pushState), de modo que volver atrás sube un nivel en
+// lugar de abandonar la página
+let drillHistoryDepth = 0;
+
+window.addEventListener('popstate', () => {
+    if (drillHistoryDepth <= 0) return;
+    drillHistoryDepth--;
+    if (isMobileMode() && parsedData) {
+        goBackOneLevel();
+    }
+});
 
 // Navigate to a specific level
 function navigateToLevel(parentCode, pushToStack = true) {
@@ -420,23 +471,31 @@ function renderCurrentLevel() {
         renderHost.className = `ipod-panel ipod-panel-${mobileNavDirection}`;
         stage.appendChild(renderHost);
         treeContainer.appendChild(stage);
+        treeContainer.removeAttribute('role');
+        treeContainer.removeAttribute('aria-label');
+    } else {
+        // Árbol navegable por teclado (flechas, Enter, Home/End)
+        treeContainer.setAttribute('role', 'treegrid');
+        treeContainer.setAttribute('aria-label', 'Árbol del presupuesto');
     }
 
     // Create Header
     const header = document.createElement('div');
     header.className = 'tree-header';
+    header.setAttribute('role', 'row');
     header.innerHTML = `
-        <div>Código</div>
-        <div>Ud</div>
-        <div>Resumen</div>
-        <div>Cantidad</div>
-        <div>Precio</div>
-        <div>Importe</div>
+        <div role="columnheader">Código</div>
+        <div role="columnheader">Ud</div>
+        <div role="columnheader">Resumen</div>
+        <div role="columnheader">Cantidad</div>
+        <div role="columnheader">Precio</div>
+        <div role="columnheader">Importe</div>
     `;
     renderHost.appendChild(header);
 
     const rootList = document.createElement('div');
     rootList.className = 'tree-roots';
+    rootList.setAttribute('role', 'presentation');
 
     if (mobileMode) {
         // Mobile: Show only current level
@@ -456,7 +515,7 @@ function renderCurrentLevel() {
                 const decomposition = getConceptDecomposition(concept);
 
                 decomposition.forEach(item => {
-                    const childNode = createNode(item.code, false, 0, item.factor, true, item.type || 0); // true = mobile mode
+                    const childNode = createNode(item.code, false, 0, item.factor, true, item.type || 0, currentLevel); // true = mobile mode
                     if (childNode) {
                         rootList.appendChild(childNode);
                     }
@@ -484,12 +543,13 @@ function renderCurrentLevel() {
 
     updateBreadcrumbs();
     updateExpandAllButtonState();
+    refreshTreeTabStops();
     mobileNavDirection = 'forward';
 }
 
 
 
-// Initialize resize on mousedown
+// Initialize resize on pointerdown (funciona con ratón, táctil y stylus)
 function initResize(e) {
     e.preventDefault();
     const col = e.target.parentElement;
@@ -500,11 +560,12 @@ function initResize(e) {
 
     e.target.classList.add('resizing');
 
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stopResize);
+    document.addEventListener('pointermove', doResize);
+    document.addEventListener('pointerup', stopResize);
+    document.addEventListener('pointercancel', stopResize);
 }
 
-// Resize during mousemove
+// Resize during pointermove
 function doResize(e) {
     if (!resizeState.isResizing) return;
 
@@ -515,15 +576,16 @@ function doResize(e) {
     updateGridTemplate();
 }
 
-// Stop resizing on mouseup
+// Stop resizing on pointerup/pointercancel
 function stopResize(e) {
     if (!resizeState.isResizing) return;
 
     resizeState.isResizing = false;
     document.querySelectorAll('.resize-handle.resizing').forEach(el => el.classList.remove('resizing'));
 
-    document.removeEventListener('mousemove', doResize);
-    document.removeEventListener('mouseup', stopResize);
+    document.removeEventListener('pointermove', doResize);
+    document.removeEventListener('pointerup', stopResize);
+    document.removeEventListener('pointercancel', stopResize);
 }
 
 // Update grid template for all rows
@@ -560,13 +622,17 @@ function renderApp(data) {
     // Reset navigation state
     navigationStack = [];
     currentLevel = null;
+    // Las entradas de historial del drill-down anterior quedan huérfanas:
+    // ignorarlas para que "atrás" no altere la vista del nuevo presupuesto
+    drillHistoryDepth = 0;
 
     // Show control buttons
     const sBtn = document.getElementById('saveBtn');
     const exportDrop = document.getElementById('exportDropdown');
     const cBtn = document.getElementById('compareBtn');
     const dBtn = document.getElementById('dashboardBtn');
-    [sBtn, exportDrop, cBtn, dBtn].forEach(el => {
+    const certButton = document.getElementById('certBtn');
+    [sBtn, exportDrop, cBtn, dBtn, certButton].forEach(el => {
         if (!el) return;
         el.classList.remove('is-hidden');
         el.style.display = 'inline-block';
@@ -665,6 +731,9 @@ function renderApp(data) {
         console.error(e);
         document.getElementById('stats').textContent += ' | ERROR RENDER: ' + e.message;
     }
+
+    // Registrar el fichero en la lista de recientes y guardar la sesión inicial
+    scheduleSessionAutosave();
 }
 
 
@@ -777,6 +846,9 @@ function filterTree(text) {
             }
         });
     }
+
+    // El filtrado cambia qué filas son visibles: recolocar el punto de entrada del teclado
+    refreshTreeTabStops();
 }
 
 /**
@@ -786,8 +858,10 @@ function filterTree(text) {
  * @param {number} depth 
  * @param {number} qty - Quantity of this node in the parent context (factor)
  * @param {boolean} mobileMode - Whether to render in mobile drill-down mode
+ * @param {number} type - Resource type of this node in the parent context
+ * @param {string|null} parentCode - Code of the parent concept (null for roots)
  */
-function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false, type = 0) {
+function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false, type = 0, parentCode = null) {
     // Validar si el nodo debe mostrarse según filtros activos
     if (typeof shouldShowNode === 'function' && !shouldShowNode(code)) {
         return null;
@@ -802,6 +876,8 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     const container = document.createElement('div');
     container.className = 'tree-node-container';
     container.dataset.code = code;
+    container.dataset.qty = qty;
+    container.setAttribute('role', 'presentation');
 
     const row = document.createElement('div');
 
@@ -835,6 +911,12 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
     const isChapter = concept.code.endsWith('#') || hasChildren;
 
     row.className = 'tree-node-row';
+    row.setAttribute('role', 'row');
+    row.setAttribute('aria-level', String(depth + 1));
+    row.tabIndex = -1;
+    if (!mobileMode && hasChildren) {
+        row.setAttribute('aria-expanded', (isRoot || expandedNodes.has(code)) ? 'true' : 'false');
+    }
 
     if (isChapter) {
         if (depth === 0) {
@@ -1042,12 +1124,26 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
 
     // Append columns
     // No colHier anymore
-    row.appendChild(colCode);
-    row.appendChild(colUnit);
-    row.appendChild(colSummary);
-    row.appendChild(colQty);
-    row.appendChild(colPrice);
-    row.appendChild(colAmount);
+    [colCode, colUnit, colSummary, colQty, colPrice, colAmount].forEach(col => {
+        col.setAttribute('role', 'gridcell');
+        row.appendChild(col);
+    });
+
+    // Botón de acciones estructurales (añadir/duplicar/eliminar) — escritorio
+    if (!mobileMode) {
+        const actionsBtn = document.createElement('button');
+        actionsBtn.type = 'button';
+        actionsBtn.className = 'row-actions-btn';
+        actionsBtn.setAttribute('aria-label', 'Acciones de ' + (concept.summary || concept.code.replace(/#+\s*$/, '')));
+        actionsBtn.title = 'Añadir, duplicar o eliminar';
+        actionsBtn.innerHTML = iconSvg('more-vertical');
+        actionsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openStructureMenuForNode(code, parentCode, actionsBtn);
+        });
+        row.appendChild(actionsBtn);
+    }
 
     // Add mobile navigation indicator
     if (mobileMode && hasChildren) {
@@ -1071,6 +1167,8 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
                     title: concept.summary || concept.code.replace(/#+\s*$/, '')
                 });
                 navigateToLevel(code);
+                history.pushState({ bc3Drill: navigationStack.length }, '');
+                drillHistoryDepth++;
             } else {
                 // Show inline details for leaf items (partidas)
                 showMobileDetails(code, container);
@@ -1085,22 +1183,14 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
 
         // Toggle Expand/Collapse
         if (hasChildren) {
-            const childrenContainer = container.querySelector('.tree-node-children');
+            const childrenContainer = container.querySelector(':scope > .tree-node-children');
             if (childrenContainer) {
-                const isVisible = childrenContainer.classList.contains('visible');
-
-                if (isVisible) {
-                    childrenContainer.classList.remove('visible');
-                    toggle.classList.remove('expanded');
-                    expandedNodes.delete(code); // Guardar estado
-                } else {
-                    childrenContainer.classList.add('visible');
-                    toggle.classList.add('expanded');
-                    expandedNodes.add(code); // Guardar estado
-                }
-                updateExpandAllButtonState();
+                setNodeExpansion(container, !childrenContainer.classList.contains('visible'));
             }
         }
+
+        // La fila clicada pasa a ser el punto de entrada del teclado
+        refreshTreeTabStops(row);
     };
 
 
@@ -1157,7 +1247,7 @@ function createNode(code, isRoot = false, depth = 0, qty = 1, mobileMode = false
         // Only render children in desktop mode (in mobile, we navigate to them)
         if (!mobileMode) {
             decomposition.forEach(item => {
-                const childNode = createNode(item.code, false, depth + 1, item.factor, mobileMode, item.type || 0);
+                const childNode = createNode(item.code, false, depth + 1, item.factor, mobileMode, item.type || 0, code);
                 if (childNode) {
                     childrenContainer.appendChild(childNode);
                 }
@@ -1182,6 +1272,8 @@ function createMeasurementTable(measurements, concept = null) {
     const table = document.createElement('table');
     table.className = 'measurements-table';
 
+    const isEditableTable = concept && !concept.code.endsWith('#');
+
     // Header
     const thead = document.createElement('thead');
     thead.innerHTML = `
@@ -1192,6 +1284,7 @@ function createMeasurementTable(measurements, concept = null) {
             <th class="numeric">Ancho</th>
             <th class="numeric">Alto</th>
             <th class="numeric">Parcial</th>
+            ${isEditableTable ? '<th class="m-col-action" aria-label="Acciones"></th>' : ''}
         </tr>
     `;
     table.appendChild(thead);
@@ -1299,6 +1392,27 @@ function createMeasurementTable(measurements, concept = null) {
         tr.appendChild(tdH);
         tr.appendChild(tdPartial);
 
+        // Botón de eliminar línea de medición
+        if (isEditableTable) {
+            const tdDel = document.createElement('td');
+            tdDel.className = 'm-cell-action';
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'measurement-delete-btn';
+            delBtn.setAttribute('aria-label', 'Eliminar línea de medición');
+            delBtn.title = 'Eliminar línea';
+            delBtn.innerHTML = iconSvg('trash-2');
+            delBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                concept.measurements.splice(idx, 1);
+                recalculateMeasurements(concept);
+                showNotification('Línea de medición eliminada');
+            });
+            tdDel.appendChild(delBtn);
+            tr.appendChild(tdDel);
+        }
+
         tbody.appendChild(tr);
     });
 
@@ -1308,8 +1422,29 @@ function createMeasurementTable(measurements, concept = null) {
     trTotal.innerHTML = `
         <td colspan="5" class="text-right">TOTAL:</td>
         <td class="numeric"><b>${total.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}</b></td>
+        ${isEditableTable ? '<td class="m-cell-action"></td>' : ''}
     `;
     tbody.appendChild(trTotal);
+
+    // Fila para añadir líneas de medición nuevas
+    if (isEditableTable) {
+        const trAdd = document.createElement('tr');
+        trAdd.className = 'add-measurement-row';
+        const tdAdd = document.createElement('td');
+        tdAdd.colSpan = 7;
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'add-measurement-btn';
+        addBtn.innerHTML = iconSvg('plus') + '<span>Añadir línea de medición</span>';
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            addMeasurementLine(concept.code);
+        });
+        tdAdd.appendChild(addBtn);
+        trAdd.appendChild(tdAdd);
+        tbody.appendChild(trAdd);
+    }
 
     table.appendChild(tbody);
     container.appendChild(table);
@@ -1346,14 +1481,101 @@ function showMobileDetails(code, container) {
     detailsContainer.style.backgroundColor = '#f8fafc';
     detailsContainer.style.borderBottom = '1px solid var(--border-color)';
 
-    // Title
+    const isEditableConcept = !concept.code.endsWith('#');
+
+    // Title (resumen) con botón de lápiz para editar en táctil
+    const titleRow = document.createElement('div');
+    titleRow.className = 'mobile-detail-row';
+
     const title = document.createElement('h3');
-    title.style.margin = '0 0 0.5rem 0';
+    title.style.margin = '0';
     title.style.fontSize = '1rem';
     title.style.fontWeight = '600';
     title.style.color = 'var(--text-primary)';
+    title.style.flex = '1';
+    title.style.minWidth = '0';
     title.textContent = concept.summary || concept.code.replace(/#+\s*$/, '');
-    detailsContainer.appendChild(title);
+    titleRow.appendChild(title);
+
+    if (isEditableConcept) {
+        const titleEditable = enableDoubleClickEditing(title);
+        title.addEventListener('blur', () => {
+            const newSummary = title.textContent.trim();
+            if (newSummary && newSummary !== concept.summary) {
+                concept.summary = newSummary;
+                const rowSummary = container.querySelector('.col-summary');
+                if (rowSummary) rowSummary.textContent = newSummary;
+                saveHistoryState();
+            } else {
+                title.textContent = concept.summary || concept.code.replace(/#+\s*$/, '');
+            }
+        });
+        title.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                title.blur();
+            }
+        });
+        titleRow.appendChild(createEditPencilButton(titleEditable, 'Editar resumen'));
+    }
+    detailsContainer.appendChild(titleRow);
+
+    // Precio con botón de lápiz
+    if (isEditableConcept) {
+        const priceRow = document.createElement('div');
+        priceRow.className = 'mobile-detail-row mobile-detail-price-row';
+
+        const priceLabel = document.createElement('span');
+        priceLabel.className = 'mobile-detail-price-label';
+        priceLabel.textContent = 'Precio:';
+        priceRow.appendChild(priceLabel);
+
+        const priceValue = document.createElement('span');
+        priceValue.className = 'mobile-detail-price-value';
+        const formatPrice = () => {
+            const p = parseFloat(concept.price) || 0;
+            priceValue.textContent = p.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+        };
+        formatPrice();
+        priceRow.appendChild(priceValue);
+
+        const priceEditable = enableDoubleClickEditing(priceValue, { selectOnEdit: true });
+
+        priceValue.addEventListener('focus', () => {
+            // Mostrar número simple sin formatear para edición cómoda
+            priceValue.textContent = parseFloat(concept.price) || 0;
+        });
+
+        priceValue.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                priceValue.blur();
+            }
+        });
+
+        priceValue.addEventListener('blur', () => {
+            const valText = priceValue.textContent.trim().replace(',', '.');
+            const newVal = parseFloat(valText);
+
+            if (!isNaN(newVal) && newVal >= 0 && parseFloat(concept.price) !== newVal) {
+                concept.price = newVal;
+                concept.isManualPrice = true; // Bloquear precio manual
+                recalculateAll();
+                updateTotalBudgetDisplay();
+                saveHistoryState();
+                // Actualizar el importe de la fila sin re-renderizar (se perdería el detalle abierto)
+                const rowAmount = container.querySelector('.col-amount');
+                if (rowAmount) {
+                    const qty = parseFloat(container.dataset.qty) || 1;
+                    rowAmount.textContent = (newVal * qty).toLocaleString('es-ES', { minimumFractionDigits: 2 });
+                }
+            }
+            formatPrice();
+        });
+
+        priceRow.appendChild(createEditPencilButton(priceEditable, 'Editar precio'));
+        detailsContainer.appendChild(priceRow);
+    }
 
     // Description
     if (concept.description && concept.description.trim()) {
@@ -1399,7 +1621,13 @@ function showDetails(code) {
     const emptyState = document.querySelector('#detailsPanel .empty-state');
 
     emptyState.style.display = 'none';
+    panel.classList.remove('is-hidden');
     panel.style.display = 'block';
+
+    // Abrir el panel lateral en escritorio (el divisor permite redimensionarlo)
+    if (!isMobileMode()) {
+        document.querySelector('.content-area')?.classList.add('details-open');
+    }
 
     document.getElementById('detCode').textContent = concept.code.replace(/#+\s*$/, '');
     document.getElementById('detSummary').textContent = concept.summary;
@@ -1453,18 +1681,74 @@ function showDetails(code) {
             const total = childPrice * factor;
             totalCalc += total;
 
-            row.innerHTML = `
-                <td>${item.code.replace(/#+\s*$/, '')}</td>
-                <td>${factor.toLocaleString('es-ES')} ${childNode ? childNode.unit : ''}</td>
-                <td>${childNode ? childNode.summary : '???'}</td>
-                <td>${childPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
-                <td><strong>${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</strong></td>
-            `;
+            const tdCode = document.createElement('td');
+            tdCode.textContent = item.code.replace(/#+\s*$/, '');
+
+            // Factor / cantidad de la descomposición: editable en línea
+            const tdFactor = document.createElement('td');
+            const factorSpan = document.createElement('span');
+            factorSpan.className = 'decomp-factor';
+            factorSpan.textContent = factor.toLocaleString('es-ES');
+            enableDoubleClickEditing(factorSpan, { selectOnEdit: true });
+            factorSpan.addEventListener('focus', () => {
+                factorSpan.textContent = parseFloat(item.factor) || 0;
+            });
+            factorSpan.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    factorSpan.blur();
+                }
+            });
+            factorSpan.addEventListener('blur', () => {
+                const valText = factorSpan.textContent.trim().replace(',', '.');
+                const newVal = parseFloat(valText);
+                if (!isNaN(newVal) && newVal >= 0 && parseFloat(item.factor) !== newVal) {
+                    item.factor = newVal;
+                    if (childNode) childNode.quantity = newVal;
+                    refreshAfterStructureChange();
+                } else {
+                    factorSpan.textContent = (parseFloat(item.factor) || 0).toLocaleString('es-ES');
+                }
+            });
+            tdFactor.appendChild(factorSpan);
+            if (childNode && childNode.unit) {
+                tdFactor.appendChild(document.createTextNode(' ' + childNode.unit));
+            }
+
+            const tdSummary = document.createElement('td');
+            tdSummary.textContent = childNode ? childNode.summary : '???';
+
+            const tdPrice = document.createElement('td');
+            tdPrice.textContent = childPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+
+            const tdTotal = document.createElement('td');
+            tdTotal.innerHTML = `<strong>${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</strong>`;
+
+            // Eliminar la línea de la descomposición
+            const tdAction = document.createElement('td');
+            tdAction.className = 'decomp-col-action';
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'decomp-delete-btn';
+            delBtn.setAttribute('aria-label', 'Eliminar línea de la descomposición');
+            delBtn.title = 'Eliminar línea';
+            delBtn.innerHTML = iconSvg('trash-2');
+            delBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const label = childNode ? (childNode.summary || item.code) : item.code;
+                if (confirm(`¿Eliminar "${label}" de la descomposición?`)) {
+                    deleteConcept(item.code, concept.code);
+                }
+            });
+            tdAction.appendChild(delBtn);
+
+            [tdCode, tdFactor, tdSummary, tdPrice, tdTotal, tdAction].forEach(td => row.appendChild(td));
             tbody.appendChild(row);
         });
     } else {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="5" class="table-empty-cell">Sin descomposición (Partida simple o Capítulo)</td>`;
+        row.innerHTML = `<td colspan="6" class="table-empty-cell">Sin descomposición (Partida simple o Capítulo)</td>`;
         tbody.appendChild(row);
     }
 
@@ -1591,6 +1875,18 @@ function getMeasurementTotal(concept) {
     }, 0);
 }
 
+// Sublíneas de medición en formato FIEBDC: \Etiqueta\Uds\Largo\Ancho\Alto\
+function buildMeasurementSublines(concept) {
+    return (concept.measurements || []).map(m => {
+        const label = sanitizeBC3Field(m.label);
+        const units = m.units === '' ? "" : formatBC3Decimal(m.units, 3);
+        const l = m.l === '' ? "" : formatBC3Decimal(m.l, 3);
+        const w = m.w === '' ? "" : formatBC3Decimal(m.w, 3);
+        const h = m.h === '' ? "" : formatBC3Decimal(m.h, 3);
+        return `\\${label}\\${units}\\${l}\\${w}\\${h}\\`;
+    });
+}
+
 // Reconstrucción del archivo BC3
 function generateModifiedBC3() {
     if (!originalFileText) return "";
@@ -1600,6 +1896,11 @@ function generateModifiedBC3() {
     let skipLinesUntilNonSlash = false;
     let skipOriginalRecordContinuations = false;
     const textRecordCodes = new Set();
+    // Registros presentes en el fichero original, para detectar conceptos nuevos
+    // (edición estructural) que deben añadirse al final
+    const conceptRecordCodes = new Set();
+    const decompRecordCodes = new Set();
+    const measurementChildCodes = new Set();
 
     lines.forEach(line => {
         const trimmed = line.trim();
@@ -1608,6 +1909,16 @@ function generateModifiedBC3() {
             if (parts[1]) {
                 textRecordCodes.add(parts[1]);
             }
+        } else if (trimmed.startsWith('~C|')) {
+            const parts = trimmed.split('|');
+            if (parts[1]) conceptRecordCodes.add(parts[1]);
+        } else if (trimmed.startsWith('~D|')) {
+            const parts = trimmed.split('|');
+            if (parts[1]) decompRecordCodes.add(parts[1]);
+        } else if (trimmed.startsWith('~M|')) {
+            const parts = trimmed.split('|');
+            const childCode = (parts[1] || '').split('\\').filter(Boolean).pop();
+            if (childCode) measurementChildCodes.add(childCode);
         }
     });
 
@@ -1644,6 +1955,9 @@ function generateModifiedBC3() {
                     modifiedLines.push(`~T|${code}|${sanitizeBC3Field(concept.description)}|`);
                     textRecordCodes.add(code);
                 }
+            } else if (code) {
+                // Concepto eliminado en la edición estructural: omitir su registro
+                skipOriginalRecordContinuations = true;
             } else {
                 modifiedLines.push(line);
             }
@@ -1660,6 +1974,9 @@ function generateModifiedBC3() {
                 });
                 parts[2] = decompParts.join('\\') + '\\';
                 modifiedLines.push(parts.join('|'));
+                skipOriginalRecordContinuations = true;
+            } else if (parentCode) {
+                // Padre eliminado o descomposición vaciada: omitir el registro original
                 skipOriginalRecordContinuations = true;
             } else {
                 modifiedLines.push(line);
@@ -1678,18 +1995,12 @@ function generateModifiedBC3() {
                 modifiedLines.push(parts.join('|'));
 
                 // Escribir las sublíneas de mediciones editadas
-                concept.measurements.forEach(m => {
-                    const label = sanitizeBC3Field(m.label);
-                    const units = m.units === '' ? "" : formatBC3Decimal(m.units, 3);
-                    const l = m.l === '' ? "" : formatBC3Decimal(m.l, 3);
-                    const w = m.w === '' ? "" : formatBC3Decimal(m.w, 3);
-                    const h = m.h === '' ? "" : formatBC3Decimal(m.h, 3);
-                    
-                    // Formato FIEBDC: \Label\Units\L\W\H\
-                    modifiedLines.push(`\\${label}\\${units}\\${l}\\${w}\\${h}\\`);
-                });
+                buildMeasurementSublines(concept).forEach(subline => modifiedLines.push(subline));
 
                 // Activar el salto de las líneas de medición originales que siguen
+                skipLinesUntilNonSlash = true;
+            } else if (childCode) {
+                // Partida eliminada o sin líneas de medición: omitir el registro y sus sublíneas
                 skipLinesUntilNonSlash = true;
             } else {
                 modifiedLines.push(line);
@@ -1708,6 +2019,9 @@ function generateModifiedBC3() {
             if (concept) {
                 parts[2] = sanitizeBC3Field(concept.description);
                 modifiedLines.push(parts.join('|'));
+            } else if (code) {
+                // Concepto eliminado: omitir su texto descriptivo
+                skipOriginalRecordContinuations = true;
             } else {
                 modifiedLines.push(line);
             }
@@ -1715,6 +2029,44 @@ function generateModifiedBC3() {
             modifiedLines.push(line);
         }
     }
+
+    // Añadir al final los registros de conceptos creados con la edición estructural
+    // (capítulos, partidas, descomposiciones y mediciones sin registro original)
+    Object.values(parsedData.concepts).forEach(concept => {
+        const code = concept.code;
+        if (!code) return;
+
+        if (!conceptRecordCodes.has(code)) {
+            const unit = sanitizeBC3Field(concept.unit || '');
+            const summary = sanitizeBC3Field(concept.summary || '');
+            const price = formatBC3Decimal(concept.price, 2) || '0.00';
+            const date = sanitizeBC3Field(concept.date || '');
+            const type = Number.isFinite(parseInt(concept.type)) ? parseInt(concept.type) : 0;
+            modifiedLines.push(`~C|${code}|${unit}|${summary}|${price}|${date}|${type}|`);
+
+            if (concept.description && !textRecordCodes.has(code)) {
+                modifiedLines.push(`~T|${code}|${sanitizeBC3Field(concept.description)}|`);
+                textRecordCodes.add(code);
+            }
+        }
+
+        if (Array.isArray(concept.decomposition) && concept.decomposition.length > 0 && !decompRecordCodes.has(code)) {
+            const decompParts = [];
+            concept.decomposition.forEach(item => {
+                decompParts.push(item.code);
+                decompParts.push('');
+                decompParts.push(formatBC3Decimal(item.factor, 3));
+            });
+            modifiedLines.push(`~D|${code}|${decompParts.join('\\')}\\|`);
+        }
+
+        if (Array.isArray(concept.measurements) && concept.measurements.length > 0 && !measurementChildCodes.has(code)) {
+            const parentCode = findParentCodes(code)[0] || '';
+            const totalSum = getMeasurementTotal(concept);
+            modifiedLines.push(`~M|${parentCode}\\${code}||${totalSum.toFixed(3)}|`);
+            buildMeasurementSublines(concept).forEach(subline => modifiedLines.push(subline));
+        }
+    });
 
     return modifiedLines.join('\r\n');
 }
@@ -1950,7 +2302,7 @@ function exportToPdf() {
         doc.line(15, 282, 195, 282);
         
         // Textos pie de página
-        doc.text("© Licencia Open Source - Software Libre y de Derechos Abiertos | V0.3.0 by System Arquitectura", 15, 287);
+        doc.text("© Licencia Open Source - Software Libre y de Derechos Abiertos | V0.4.0 by System Arquitectura", 15, 287);
         
         const pageStr = `Página ${i} de ${totalPages}`;
         doc.text(pageStr, 195 - doc.getTextWidth(pageStr), 287);
@@ -2722,15 +3074,57 @@ if (expandAllBtn) {
 
 if (costFilter) {
     costFilter.addEventListener('change', () => {
+        updateFilterCountBadge();
         renderCurrentLevel();
     });
 }
 
 if (resourceFilter) {
     resourceFilter.addEventListener('change', () => {
+        updateFilterCountBadge();
         renderCurrentLevel();
     });
 }
+
+// Hoja inferior de filtros (móvil): botón "Filtros" con contador de filtros activos
+const filterBarEl = document.getElementById('filterBar');
+const filterSheetToggle = document.getElementById('filterSheetToggle');
+const filterSheetBackdrop = document.getElementById('filterSheetBackdrop');
+const closeFilterSheetBtn = document.getElementById('closeFilterSheetBtn');
+
+function setFilterSheetOpen(open) {
+    if (!filterBarEl || !filterSheetToggle) return;
+    filterBarEl.classList.toggle('sheet-open', open);
+    filterSheetToggle.setAttribute('aria-expanded', String(open));
+}
+
+function isFilterSheetOpen() {
+    return !!filterBarEl && filterBarEl.classList.contains('sheet-open');
+}
+
+function updateFilterCountBadge() {
+    const badge = document.getElementById('filterCountBadge');
+    if (!badge) return;
+    const activeCount = ['costFilter', 'resourceFilter']
+        .filter(id => getActiveFilterValue(id) !== 'all').length;
+    badge.textContent = activeCount;
+    badge.classList.toggle('is-hidden', activeCount === 0);
+}
+
+if (filterSheetToggle) {
+    filterSheetToggle.addEventListener('click', () => setFilterSheetOpen(!isFilterSheetOpen()));
+}
+if (filterSheetBackdrop) {
+    filterSheetBackdrop.addEventListener('click', () => setFilterSheetOpen(false));
+}
+if (closeFilterSheetBtn) {
+    closeFilterSheetBtn.addEventListener('click', () => setFilterSheetOpen(false));
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isFilterSheetOpen()) {
+        setFilterSheetOpen(false);
+    }
+});
 
 // Coeficientes globales (PEM vs PEC)
 const toggleCoeffsBtn = document.getElementById('toggleCoeffsBtn');
@@ -2789,6 +3183,9 @@ function saveHistoryState() {
     
     historyIndex = stateHistory.length - 1;
     updateUndoRedoButtonsState();
+
+    // Autoguardado: persistir la sesión editada en localStorage
+    scheduleSessionAutosave();
 }
 
 function undo() {
@@ -2809,6 +3206,7 @@ function undo() {
         }
         
         updateUndoRedoButtonsState();
+        scheduleSessionAutosave();
         showNotification("Deshacer: Cambio revertido");
     }
 }
@@ -2831,6 +3229,7 @@ function redo() {
         }
         
         updateUndoRedoButtonsState();
+        scheduleSessionAutosave();
         showNotification("Rehacer: Cambio restaurado");
     }
 }
@@ -3137,11 +3536,12 @@ function rebuildGanttDOM() {
     const colResizeHandle = document.createElement('div');
     colResizeHandle.className = 'gantt-col-resize-handle';
     colResizeHandle.title = 'Arrastrar para cambiar el ancho de la columna';
-    colResizeHandle.addEventListener('mousedown', e => {
+    colResizeHandle.addEventListener('pointerdown', e => {
         e.preventDefault();
         ganttColDrag = { startX: e.clientX, startWidth: ganttLeftColWidth };
-        document.addEventListener('mousemove', doGanttColResize);
-        document.addEventListener('mouseup', stopGanttColResize);
+        document.addEventListener('pointermove', doGanttColResize);
+        document.addEventListener('pointerup', stopGanttColResize);
+        document.addEventListener('pointercancel', stopGanttColResize);
     });
     leftCol.appendChild(colResizeHandle);
 
@@ -3228,7 +3628,7 @@ function rebuildGanttDOM() {
 
         const resizeL = document.createElement('div');
         resizeL.className = 'gantt-resize gantt-resize-l';
-        resizeL.addEventListener('mousedown', e => startGanttDrag(e, task.id, 'left'));
+        resizeL.addEventListener('pointerdown', e => startGanttDrag(e, task.id, 'left'));
 
         const barLabel = document.createElement('span');
         barLabel.className = 'gantt-bar-label';
@@ -3237,12 +3637,12 @@ function rebuildGanttDOM() {
 
         const resizeR = document.createElement('div');
         resizeR.className = 'gantt-resize gantt-resize-r';
-        resizeR.addEventListener('mousedown', e => startGanttDrag(e, task.id, 'right'));
+        resizeR.addEventListener('pointerdown', e => startGanttDrag(e, task.id, 'right'));
 
         bar.appendChild(resizeL);
         bar.appendChild(barLabel);
         bar.appendChild(resizeR);
-        bar.addEventListener('mousedown', e => {
+        bar.addEventListener('pointerdown', e => {
             if (e.target === resizeL || e.target === resizeR) return;
             startGanttDrag(e, task.id, 'move');
         });
@@ -3282,8 +3682,9 @@ function doGanttColResize(e) {
 }
 function stopGanttColResize() {
     ganttColDrag = null;
-    document.removeEventListener('mousemove', doGanttColResize);
-    document.removeEventListener('mouseup', stopGanttColResize);
+    document.removeEventListener('pointermove', doGanttColResize);
+    document.removeEventListener('pointerup', stopGanttColResize);
+    document.removeEventListener('pointercancel', stopGanttColResize);
 }
 
 // ---- Drag & Drop del Gantt ----
@@ -3306,8 +3707,9 @@ function startGanttDrag(e, taskId, mode) {
         origDur: st.durationWeeks
     };
 
-    document.addEventListener('mousemove', doGanttDrag);
-    document.addEventListener('mouseup', stopGanttDrag);
+    document.addEventListener('pointermove', doGanttDrag);
+    document.addEventListener('pointerup', stopGanttDrag);
+    document.addEventListener('pointercancel', stopGanttDrag);
 }
 
 function doGanttDrag(e) {
@@ -3346,8 +3748,9 @@ function stopGanttDrag() {
     if (!ganttDrag) return;
     ganttSave();
     ganttDrag = null;
-    document.removeEventListener('mousemove', doGanttDrag);
-    document.removeEventListener('mouseup', stopGanttDrag);
+    document.removeEventListener('pointermove', doGanttDrag);
+    document.removeEventListener('pointerup', stopGanttDrag);
+    document.removeEventListener('pointercancel', stopGanttDrag);
 }
 
 // ---- Exportar Gantt a Excel (tabla estructurada) ----
@@ -3610,3 +4013,1052 @@ if (exportGanttPdfBtn) {
 if (exportGanttExcelBtn) {
     exportGanttExcelBtn.addEventListener('click', exportGanttToExcel);
 }
+
+// ============================================================
+// DIVISOR ÁRBOL/DETALLES REDIMENSIONABLE (persistido en localStorage)
+// ============================================================
+
+const DETAILS_WIDTH_KEY = 'bc3_detailsPanelWidth';
+
+function setDetailsPanelWidth(width) {
+    document.documentElement.style.setProperty('--details-panel-width', width + 'px');
+}
+
+function saveDetailsPanelWidth() {
+    const detailsPanel = document.getElementById('detailsPanel');
+    if (!detailsPanel) return;
+    // Se guarda el ancho real ya acotado por min/max-width del CSS
+    const width = Math.round(detailsPanel.getBoundingClientRect().width);
+    if (width > 0) localStorage.setItem(DETAILS_WIDTH_KEY, String(width));
+}
+
+(function restoreDetailsPanelWidth() {
+    const stored = parseFloat(localStorage.getItem(DETAILS_WIDTH_KEY));
+    if (!isNaN(stored) && stored > 0) setDetailsPanelWidth(stored);
+})();
+
+const panelDivider = document.getElementById('panelDivider');
+if (panelDivider) {
+    let dividerDrag = null;
+
+    panelDivider.addEventListener('pointerdown', (e) => {
+        const detailsPanel = document.getElementById('detailsPanel');
+        if (!detailsPanel) return;
+        e.preventDefault();
+        dividerDrag = {
+            startX: e.clientX,
+            startWidth: detailsPanel.getBoundingClientRect().width
+        };
+        panelDivider.classList.add('dragging');
+        panelDivider.setPointerCapture(e.pointerId);
+    });
+
+    panelDivider.addEventListener('pointermove', (e) => {
+        if (!dividerDrag) return;
+        setDetailsPanelWidth(dividerDrag.startWidth + (dividerDrag.startX - e.clientX));
+    });
+
+    const endDividerDrag = () => {
+        if (!dividerDrag) return;
+        dividerDrag = null;
+        panelDivider.classList.remove('dragging');
+        saveDetailsPanelWidth();
+    };
+    panelDivider.addEventListener('pointerup', endDividerDrag);
+    panelDivider.addEventListener('pointercancel', endDividerDrag);
+
+    // Ajuste con teclado para accesibilidad del separador
+    panelDivider.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        const detailsPanel = document.getElementById('detailsPanel');
+        if (!detailsPanel) return;
+        e.preventDefault();
+        const current = detailsPanel.getBoundingClientRect().width;
+        setDetailsPanelWidth(current + (e.key === 'ArrowLeft' ? 24 : -24));
+        saveDetailsPanelWidth();
+    });
+}
+
+const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+if (closeDetailsBtn) {
+    closeDetailsBtn.addEventListener('click', () => {
+        document.querySelector('.content-area')?.classList.remove('details-open');
+        document.querySelectorAll('.tree-node-row.active').forEach(el => el.classList.remove('active'));
+    });
+}
+
+// ============================================================
+// NAVEGACIÓN POR TECLADO EN EL ÁRBOL (treegrid)
+// ============================================================
+
+function getVisibleTreeRows() {
+    const treeContainer = document.getElementById('treeContent');
+    if (!treeContainer) return [];
+    return Array.from(treeContainer.querySelectorAll('.tree-node-row'))
+        .filter(row => row.offsetParent !== null);
+}
+
+// Roving tabindex: una única fila es el punto de entrada con Tab
+function refreshTreeTabStops(preferredRow = null) {
+    const rows = getVisibleTreeRows();
+    if (!rows.length) return;
+    const entry = (preferredRow && rows.includes(preferredRow))
+        ? preferredRow
+        : (rows.find(r => r.classList.contains('active')) || rows[0]);
+    rows.forEach(row => { row.tabIndex = row === entry ? 0 : -1; });
+}
+
+function focusTreeRow(row) {
+    if (!row) return;
+    refreshTreeTabStops(row);
+    row.focus();
+}
+
+// Expande o contrae un nodo sin re-renderizar el árbol
+function setNodeExpansion(container, expand) {
+    if (!container) return;
+    const childrenContainer = container.querySelector(':scope > .tree-node-children');
+    if (!childrenContainer) return;
+
+    const row = container.querySelector(':scope > .tree-node-row');
+    const toggle = row ? row.querySelector('.toggle-icon') : null;
+    const code = container.dataset.code;
+
+    childrenContainer.classList.toggle('visible', expand);
+    if (toggle) toggle.classList.toggle('expanded', expand);
+    if (row && row.hasAttribute('aria-expanded')) {
+        row.setAttribute('aria-expanded', String(expand));
+    }
+    if (code) {
+        if (expand) expandedNodes.add(code);
+        else expandedNodes.delete(code);
+    }
+    updateExpandAllButtonState();
+    refreshTreeTabStops(row);
+}
+
+const treeKeyboardHost = document.getElementById('treeContent');
+if (treeKeyboardHost) {
+    treeKeyboardHost.addEventListener('keydown', (e) => {
+        if (isMobileMode()) return;
+
+        const target = e.target;
+        // No interferir con la edición inline ni con controles embebidos
+        if (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName)) return;
+
+        const row = target.closest('.tree-node-row');
+        if (!row) return;
+
+        const rows = getVisibleTreeRows();
+        const idx = rows.indexOf(row);
+        if (idx === -1) return;
+
+        const container = row.parentElement; // .tree-node-container
+        const childrenContainer = container ? container.querySelector(':scope > .tree-node-children') : null;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (idx < rows.length - 1) focusTreeRow(rows[idx + 1]);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (idx > 0) focusTreeRow(rows[idx - 1]);
+                break;
+            case 'Home':
+                e.preventDefault();
+                focusTreeRow(rows[0]);
+                break;
+            case 'End':
+                e.preventDefault();
+                focusTreeRow(rows[rows.length - 1]);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                if (childrenContainer && !childrenContainer.classList.contains('visible')) {
+                    setNodeExpansion(container, true);
+                } else if (childrenContainer) {
+                    const firstChildRow = childrenContainer.querySelector('.tree-node-row');
+                    if (firstChildRow && firstChildRow.offsetParent !== null) focusTreeRow(firstChildRow);
+                }
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                if (childrenContainer && childrenContainer.classList.contains('visible')) {
+                    setNodeExpansion(container, false);
+                } else {
+                    const parentContainer = container ? container.parentElement.closest('.tree-node-container') : null;
+                    const parentRow = parentContainer ? parentContainer.querySelector(':scope > .tree-node-row') : null;
+                    if (parentRow) focusTreeRow(parentRow);
+                }
+                break;
+            case 'Enter': {
+                e.preventDefault();
+                document.querySelectorAll('.tree-node-row').forEach(el => el.classList.remove('active'));
+                row.classList.add('active');
+                const code = container ? container.dataset.code : null;
+                if (code) showDetails(code);
+                break;
+            }
+        }
+    });
+}
+
+// Atajo global: "/" lleva el foco al buscador
+document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const target = e.target;
+    if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return;
+    const searchInput = document.getElementById('searchTerm');
+    if (!searchInput || searchInput.offsetParent === null) return;
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+});
+
+// Escape en el buscador devuelve el foco al árbol
+const searchTermInput = document.getElementById('searchTerm');
+if (searchTermInput) {
+    searchTermInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        e.stopPropagation();
+        searchTermInput.blur();
+        focusTreeRow(getVisibleTreeRows()[0]);
+    });
+}
+
+// ============================================================
+// AUTOGUARDADO Y RECUPERACIÓN DE SESIÓN (localStorage)
+// ============================================================
+// Reutiliza el patrón de persistencia del Gantt: una clave por fichero,
+// más un índice de "archivos recientes" con las últimas sesiones guardadas.
+
+const SESSION_INDEX_KEY = 'bc3_recentFiles';
+const SESSION_MAX_RECENT = 5;
+let sessionAutosaveTimer = null;
+
+function sessionStorageKey(fileName) {
+    return 'bc3_session_' + String(fileName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\.\-]/g, '');
+}
+
+function getRecentSessions() {
+    try {
+        const raw = localStorage.getItem(SESSION_INDEX_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+}
+
+function setRecentSessions(list) {
+    try {
+        localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(list));
+    } catch (e) { /* cuota excedida — ignorar */ }
+}
+
+// Eliminar las sesiones más antiguas hasta dejar sitio (se usa también al exceder cuota)
+function pruneSessions(keepKey = null, maxEntries = SESSION_MAX_RECENT) {
+    let recents = getRecentSessions();
+    while (recents.length > maxEntries) {
+        const oldest = recents[recents.length - 1];
+        recents = recents.slice(0, -1);
+        try { localStorage.removeItem(sessionStorageKey(oldest.name)); } catch (e) { /* ignorar */ }
+    }
+    if (keepKey) {
+        // Ante una cuota agotada, sacrificar el resto de sesiones para salvar la actual
+        recents = recents.filter(entry => {
+            const key = sessionStorageKey(entry.name);
+            if (key === keepKey) return true;
+            try { localStorage.removeItem(key); } catch (e) { /* ignorar */ }
+            return false;
+        });
+    }
+    setRecentSessions(recents);
+}
+
+function saveSessionNow() {
+    if (!parsedData) return;
+    const key = sessionStorageKey(currentFileName);
+    const savedAt = new Date().toISOString();
+    const payload = JSON.stringify({ name: currentFileName, savedAt, data: parsedData });
+
+    try {
+        localStorage.setItem(key, payload);
+    } catch (e) {
+        // Cuota excedida: eliminar el resto de sesiones y reintentar
+        pruneSessions(key, 0);
+        try { localStorage.setItem(key, payload); } catch (e2) { return; }
+    }
+
+    // Actualizar índice de recientes (el más nuevo primero)
+    const recents = getRecentSessions().filter(entry => entry.name !== currentFileName);
+    recents.unshift({ name: currentFileName, savedAt });
+    setRecentSessions(recents.slice(0, SESSION_MAX_RECENT));
+    pruneSessions();
+}
+
+function scheduleSessionAutosave() {
+    if (!parsedData) return;
+    clearTimeout(sessionAutosaveTimer);
+    sessionAutosaveTimer = setTimeout(saveSessionNow, 800);
+}
+
+// Guardado final al abandonar/ocultar la página (el temporizador podría no llegar a dispararse)
+window.addEventListener('pagehide', () => {
+    if (parsedData) saveSessionNow();
+});
+
+function loadStoredSession(fileName) {
+    try {
+        const raw = localStorage.getItem(sessionStorageKey(fileName));
+        if (!raw) return null;
+        const saved = JSON.parse(raw);
+        return (saved && saved.data && saved.data.concepts) ? saved : null;
+    } catch (e) { return null; }
+}
+
+function restoreSession(fileName) {
+    const saved = loadStoredSession(fileName);
+    if (!saved) {
+        showNotification('No se ha podido recuperar la sesión');
+        renderRecentFilesList();
+        return;
+    }
+    currentFileName = saved.name;
+    setSelectedFileName(currentFileName);
+    renderApp(saved.data);
+    showNotification('Sesión recuperada: ' + saved.name);
+}
+
+function deleteStoredSession(fileName) {
+    try { localStorage.removeItem(sessionStorageKey(fileName)); } catch (e) { /* ignorar */ }
+    setRecentSessions(getRecentSessions().filter(entry => entry.name !== fileName));
+    renderRecentFilesList();
+}
+
+function formatSessionDate(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Lista de "archivos recientes" en el estado vacío inicial
+function renderRecentFilesList() {
+    const emptyCard = document.querySelector('#treePanel .empty-state .empty-card');
+    if (!emptyCard) return;
+
+    let section = emptyCard.querySelector('.recent-files');
+    if (section) section.remove();
+
+    // Solo mostrar sesiones que realmente existan en localStorage
+    const recents = getRecentSessions().filter(entry => loadStoredSession(entry.name));
+    if (recents.length === 0) return;
+
+    section = document.createElement('div');
+    section.className = 'recent-files';
+
+    const title = document.createElement('h2');
+    title.className = 'recent-files-title';
+    title.innerHTML = iconSvg('history') + '<span>Sesiones guardadas</span>';
+    section.appendChild(title);
+
+    const list = document.createElement('ul');
+    list.className = 'recent-files-list';
+
+    recents.forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = 'recent-file-item';
+
+        const info = document.createElement('button');
+        info.type = 'button';
+        info.className = 'recent-file-open';
+        info.title = 'Recuperar la sesión guardada de ' + entry.name;
+        info.innerHTML = `<span class="recent-file-name">${entry.name}</span>` +
+            `<span class="recent-file-date">${idx === 0 ? 'Última sesión · ' : ''}${formatSessionDate(entry.savedAt)}</span>`;
+        info.addEventListener('click', () => restoreSession(entry.name));
+        li.appendChild(info);
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'recent-file-delete';
+        del.setAttribute('aria-label', 'Eliminar la sesión guardada de ' + entry.name);
+        del.title = 'Eliminar sesión guardada';
+        del.innerHTML = iconSvg('trash-2');
+        del.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteStoredSession(entry.name);
+        });
+        li.appendChild(del);
+
+        list.appendChild(li);
+    });
+
+    section.appendChild(list);
+    emptyCard.appendChild(section);
+}
+
+renderRecentFilesList();
+
+// ============================================================
+// EDICIÓN ESTRUCTURAL: AÑADIR, DUPLICAR Y ELIMINAR
+// capítulos, partidas y líneas de medición
+// ============================================================
+
+// Buscar los códigos de todos los padres que referencian a un concepto
+function findParentCodes(code) {
+    if (!parsedData) return [];
+    const parents = [];
+    Object.values(parsedData.concepts).forEach(parent => {
+        const decomposition = getConceptDecomposition(parent);
+        if (decomposition.some(item => item.code === code)) {
+            parents.push(parent.code);
+        }
+    });
+    return parents;
+}
+
+// Materializar la descomposición del padre si solo tiene la lista simple de hijos
+// (getConceptDecomposition prioriza decomposition: sin esto, añadir un elemento
+// nuevo haría desaparecer a los hermanos existentes)
+function ensureDecomposition(parent) {
+    if (!Array.isArray(parent.decomposition)) parent.decomposition = [];
+    if (parent.decomposition.length === 0 && Array.isArray(parent.children) && parent.children.length > 0) {
+        parent.decomposition = parent.children.map(c => ({ code: c, factor: 1, type: 0 }));
+    }
+}
+
+// Generar un código nuevo único derivado del código del padre
+function generateUniqueCode(parentCode, isChapter) {
+    const base = String(parentCode || 'NUEVO').replace(/#+\s*$/, '');
+    let n = 1;
+    while (n < 10000) {
+        const candidate = base + '.N' + String(n).padStart(2, '0') + (isChapter ? '#' : '');
+        const alternative = isChapter ? candidate.replace(/#$/, '') : candidate + '#';
+        if (!parsedData.concepts[candidate] && !parsedData.concepts[alternative]) {
+            return candidate;
+        }
+        n++;
+    }
+    return base + '.N' + Date.now() + (isChapter ? '#' : '');
+}
+
+// Refrescar árbol, totales, panel de detalles e historial tras un cambio estructural
+function refreshAfterStructureChange() {
+    recalculateAll();
+    const treeContent = document.getElementById('treeContent');
+    const scrollPos = treeContent ? treeContent.scrollTop : 0;
+    renderCurrentLevel();
+    if (treeContent) treeContent.scrollTop = scrollPos;
+    updateTotalBudgetDisplay();
+
+    // Refrescar el panel de detalles, o cerrarlo si el concepto mostrado ya no existe
+    const detCodeEl = document.getElementById('detCode');
+    if (detCodeEl && detCodeEl.textContent) {
+        const shownCode = Object.keys(parsedData.concepts).find(c => c.replace(/#+\s*$/, '') === detCodeEl.textContent);
+        if (shownCode) {
+            showDetails(shownCode);
+        } else {
+            detCodeEl.textContent = '';
+            document.querySelector('.content-area')?.classList.remove('details-open');
+        }
+    }
+
+    saveHistoryState();
+}
+
+// Añadir un capítulo o una partida nuevos dentro de un padre
+function addChildConcept(parentCode, kind) {
+    const parent = parsedData.concepts[parentCode];
+    if (!parent) return;
+
+    const isChapter = kind === 'chapter';
+    const newCode = generateUniqueCode(parentCode, isChapter);
+
+    parsedData.concepts[newCode] = {
+        code: newCode,
+        unit: isChapter ? '' : 'ud',
+        summary: isChapter ? 'Nuevo capítulo' : 'Nueva partida',
+        price: 0,
+        date: '',
+        type: 0,
+        children: [],
+        decomposition: [],
+        measurements: [],
+        description: ''
+    };
+
+    ensureDecomposition(parent);
+    parent.decomposition.push({ code: newCode, factor: 1, type: 0 });
+    parent.children = parent.decomposition.map(item => item.code);
+
+    expandedNodes.add(parentCode);
+    refreshAfterStructureChange();
+    showNotification(isChapter ? 'Capítulo añadido' : 'Partida añadida');
+}
+
+// Duplicar un concepto dentro del mismo padre (justo después del original)
+function duplicateConcept(code, parentCode) {
+    const source = parsedData.concepts[code];
+    const parent = parsedData.concepts[parentCode];
+    if (!source || !parent) return;
+
+    const isChapter = String(source.code).endsWith('#');
+    const newCode = generateUniqueCode(parentCode, isChapter);
+
+    const clone = JSON.parse(JSON.stringify(source));
+    clone.code = newCode;
+    clone.is_root = false;
+    parsedData.concepts[newCode] = clone;
+
+    ensureDecomposition(parent);
+    const idx = parent.decomposition.findIndex(item => item.code === code);
+    const originalItem = idx >= 0 ? parent.decomposition[idx] : null;
+    parent.decomposition.splice(idx >= 0 ? idx + 1 : parent.decomposition.length, 0, {
+        code: newCode,
+        factor: originalItem ? (parseFloat(originalItem.factor) || 1) : 1,
+        type: originalItem ? (originalItem.type || 0) : 0
+    });
+    parent.children = parent.decomposition.map(item => item.code);
+
+    refreshAfterStructureChange();
+    showNotification('Elemento duplicado como ' + newCode.replace(/#+\s*$/, ''));
+}
+
+// Eliminar un concepto de su padre (y su definición si nada más lo referencia)
+function deleteConcept(code, parentCode) {
+    const parent = parsedData.concepts[parentCode];
+    if (!parent) return;
+
+    ensureDecomposition(parent);
+    parent.decomposition = parent.decomposition.filter(item => item.code !== code);
+    parent.children = parent.decomposition.map(item => item.code);
+
+    const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+    if (findParentCodes(code).length === 0 && !roots.includes(code)) {
+        delete parsedData.concepts[code];
+    }
+
+    refreshAfterStructureChange();
+    showNotification('Elemento eliminado');
+}
+
+// Añadir una línea de medición nueva a una partida
+function addMeasurementLine(code) {
+    const concept = parsedData.concepts[code];
+    if (!concept) return;
+    if (!Array.isArray(concept.measurements)) concept.measurements = [];
+    concept.measurements.push({ label: 'Nueva línea', units: 1, l: '', w: '', h: '' });
+    expandedNodes.add(code);
+    recalculateMeasurements(concept);
+    showNotification('Línea de medición añadida');
+}
+
+// ---- Menú contextual de acciones estructurales ----
+let structureMenuEl = null;
+
+function closeStructureMenu() {
+    if (structureMenuEl) {
+        structureMenuEl.remove();
+        structureMenuEl = null;
+    }
+}
+
+function showStructureMenu(anchor, items) {
+    closeStructureMenu();
+
+    const menu = document.createElement('div');
+    menu.className = 'structure-menu';
+    menu.setAttribute('role', 'menu');
+
+    items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('role', 'menuitem');
+        btn.className = 'structure-menu-item' + (item.danger ? ' danger' : '');
+        btn.innerHTML = iconSvg(item.icon) + `<span>${item.label}</span>`;
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeStructureMenu();
+            item.onSelect();
+        });
+        menu.appendChild(btn);
+    });
+
+    document.body.appendChild(menu);
+
+    // Posicionar junto al botón sin salirse del viewport
+    const rect = anchor.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.right - menuRect.width;
+    if (top + menuRect.height > window.innerHeight - 8) top = rect.top - menuRect.height - 4;
+    if (left < 8) left = 8;
+    menu.style.top = Math.max(8, top) + 'px';
+    menu.style.left = left + 'px';
+
+    structureMenuEl = menu;
+}
+
+window.addEventListener('click', (e) => {
+    if (structureMenuEl && !structureMenuEl.contains(e.target)) closeStructureMenu();
+});
+window.addEventListener('resize', closeStructureMenu);
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeStructureMenu();
+});
+document.addEventListener('scroll', closeStructureMenu, true);
+
+// Abrir el menú de acciones adecuado para un nodo del árbol
+function openStructureMenuForNode(code, parentCode, anchor) {
+    const concept = parsedData.concepts[code];
+    if (!concept) return;
+
+    const isChapter = String(concept.code).endsWith('#') || concept.is_root === true;
+    const items = [];
+
+    if (isChapter) {
+        items.push({ icon: 'plus', label: 'Añadir capítulo', onSelect: () => addChildConcept(code, 'chapter') });
+        items.push({ icon: 'plus', label: 'Añadir partida', onSelect: () => addChildConcept(code, 'item') });
+    } else {
+        items.push({ icon: 'plus', label: 'Añadir línea de medición', onSelect: () => addMeasurementLine(code) });
+    }
+
+    if (parentCode) {
+        items.push({ icon: 'copy', label: 'Duplicar', onSelect: () => duplicateConcept(code, parentCode) });
+        items.push({
+            icon: 'trash-2', label: 'Eliminar', danger: true, onSelect: () => {
+                const label = concept.summary || concept.code.replace(/#+\s*$/, '');
+                if (confirm(`¿Eliminar "${label}" del presupuesto?`)) {
+                    deleteConcept(code, parentCode);
+                }
+            }
+        });
+    }
+
+    if (items.length > 0) showStructureMenu(anchor, items);
+}
+
+// ============================================================
+// CERTIFICACIONES Y SEGUIMIENTO DE OBRA
+// ============================================================
+// Cantidad certificada por partida y por mes, persistida en localStorage
+// por fichero (mismo patrón que el Gantt): certificación del período,
+// a origen y pendiente, con exportación a PDF y Excel.
+
+// Estado: { certs: { [códigoPartida]: { 'YYYY-MM': cantidadCertificada } } }
+let certState = { certs: {} };
+let certCurrentMonth = getDefaultCertMonth();
+
+function getDefaultCertMonth() {
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+}
+
+function certStorageKey() {
+    return 'cert_' + currentFileName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\.]/g, '');
+}
+
+function certSave() {
+    try {
+        localStorage.setItem(certStorageKey(), JSON.stringify(certState));
+    } catch (e) { /* cuota excedida — ignorar */ }
+}
+
+function certLoad() {
+    try {
+        const raw = localStorage.getItem(certStorageKey());
+        certState = raw ? JSON.parse(raw) : { certs: {} };
+        if (!certState || typeof certState !== 'object') certState = { certs: {} };
+        if (!certState.certs) certState.certs = {};
+    } catch (e) {
+        certState = { certs: {} };
+    }
+}
+
+// Partidas certificables: hojas del árbol con su cantidad presupuestada acumulada
+function getCertifiableItems() {
+    const items = [];
+    const seen = new Map();
+    if (!parsedData) return items;
+
+    function walk(code, factor) {
+        const concept = parsedData.concepts[code];
+        if (!concept) return;
+
+        const isChapter = String(concept.code).endsWith('#') || concept.is_root === true;
+        if (isChapter) {
+            getConceptDecomposition(concept).forEach(child => {
+                walk(child.code, parseFloat(child.factor) || 1);
+            });
+            return;
+        }
+
+        const qty = parseFloat(factor) || 0;
+        if (seen.has(code)) {
+            seen.get(code).qty += qty;
+        } else {
+            const item = {
+                code,
+                cleanCode: String(code).replace(/#+\s*$/, ''),
+                summary: concept.summary || code,
+                unit: concept.unit || '',
+                qty,
+                price: parseFloat(concept.price) || 0
+            };
+            seen.set(code, item);
+            items.push(item);
+        }
+    }
+
+    const roots = Array.isArray(parsedData.root_nodes) ? parsedData.root_nodes : Object.values(parsedData.root_nodes);
+    roots.forEach(code => walk(code, 1));
+    return items;
+}
+
+// Cantidad certificada a origen (todos los meses hasta el indicado, incluido)
+function certOriginQty(code, uptoMonth) {
+    const byMonth = certState.certs[code];
+    if (!byMonth) return 0;
+    return Object.keys(byMonth)
+        .filter(month => month <= uptoMonth)
+        .reduce((sum, month) => sum + (parseFloat(byMonth[month]) || 0), 0);
+}
+
+function certMonthLabel(month) {
+    const d = new Date(month + '-01T00:00:00');
+    if (isNaN(d.getTime())) return month;
+    const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// Filas calculadas de la certificación del mes seleccionado
+function buildCertRows() {
+    return getCertifiableItems().map(item => {
+        const monthQty = parseFloat(certState.certs[item.code]?.[certCurrentMonth]) || 0;
+        const originQty = certOriginQty(item.code, certCurrentMonth);
+        const budgetAmount = item.qty * item.price;
+        const monthAmount = monthQty * item.price;
+        const originAmount = originQty * item.price;
+        const pendingAmount = budgetAmount - originAmount;
+        const originPct = budgetAmount === 0 ? 0 : (originAmount / budgetAmount) * 100;
+        return { ...item, monthQty, originQty, budgetAmount, monthAmount, originAmount, pendingAmount, originPct };
+    });
+}
+
+function updateCertSummary(rows) {
+    const summaryEl = document.getElementById('certSummary');
+    if (!summaryEl) return;
+    const totalMonth = rows.reduce((s, r) => s + r.monthAmount, 0);
+    const totalOrigin = rows.reduce((s, r) => s + r.originAmount, 0);
+    const totalBudget = rows.reduce((s, r) => s + r.budgetAmount, 0);
+    const totalPending = totalBudget - totalOrigin;
+    const pct = totalBudget === 0 ? 0 : (totalOrigin / totalBudget) * 100;
+
+    summaryEl.innerHTML = `
+        <div class="cert-stat"><span class="cert-stat-label">Certificación del período</span><span class="cert-stat-value">${formatEuro(totalMonth)}</span></div>
+        <div class="cert-stat"><span class="cert-stat-label">Certificado a origen</span><span class="cert-stat-value">${formatEuro(totalOrigin)} (${pct.toLocaleString('es-ES', { maximumFractionDigits: 1 })} %)</span></div>
+        <div class="cert-stat"><span class="cert-stat-label">Pendiente</span><span class="cert-stat-value">${formatEuro(totalPending)}</span></div>
+    `;
+}
+
+function rebuildCertTable() {
+    const wrap = document.getElementById('certTableWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const rows = buildCertRows();
+    updateCertSummary(rows);
+
+    if (rows.length === 0) {
+        wrap.innerHTML = '<div class="cert-empty">No hay partidas certificables en este presupuesto.</div>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    table.className = 'cert-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Partida</th>
+                <th class="numeric">Ud</th>
+                <th class="numeric">Cant. presup.</th>
+                <th class="numeric">Precio</th>
+                <th class="numeric cert-col-input">Cant. período</th>
+                <th class="numeric">Imp. período</th>
+                <th class="numeric">Cant. origen</th>
+                <th class="numeric">% origen</th>
+                <th class="numeric">Imp. pendiente</th>
+            </tr>
+        </thead>
+    `;
+
+    const tbody = document.createElement('tbody');
+
+    rows.forEach(rowData => {
+        const tr = document.createElement('tr');
+
+        const tdCode = document.createElement('td');
+        tdCode.textContent = rowData.cleanCode;
+
+        const tdSummary = document.createElement('td');
+        tdSummary.className = 'cert-cell-summary';
+        tdSummary.textContent = rowData.summary;
+        tdSummary.title = rowData.summary;
+
+        const tdUnit = document.createElement('td');
+        tdUnit.className = 'numeric';
+        tdUnit.textContent = rowData.unit;
+
+        const tdQty = document.createElement('td');
+        tdQty.className = 'numeric';
+        tdQty.textContent = rowData.qty.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+
+        const tdPrice = document.createElement('td');
+        tdPrice.className = 'numeric';
+        tdPrice.textContent = rowData.price.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+
+        // Cantidad certificada en el mes seleccionado (editable)
+        const tdInput = document.createElement('td');
+        tdInput.className = 'numeric cert-col-input';
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'cert-input';
+        input.min = '0';
+        input.step = 'any';
+        input.value = rowData.monthQty || '';
+        input.placeholder = '0';
+        input.setAttribute('aria-label', 'Cantidad certificada de ' + rowData.cleanCode + ' en ' + certMonthLabel(certCurrentMonth));
+
+        const tdMonthAmount = document.createElement('td');
+        tdMonthAmount.className = 'numeric';
+        const tdOriginQty = document.createElement('td');
+        tdOriginQty.className = 'numeric';
+        const tdOriginPct = document.createElement('td');
+        tdOriginPct.className = 'numeric';
+        const tdPending = document.createElement('td');
+        tdPending.className = 'numeric';
+
+        const paintComputedCells = () => {
+            const monthQty = parseFloat(certState.certs[rowData.code]?.[certCurrentMonth]) || 0;
+            const originQty = certOriginQty(rowData.code, certCurrentMonth);
+            const originAmount = originQty * rowData.price;
+            const originPct = rowData.budgetAmount === 0 ? 0 : (originAmount / rowData.budgetAmount) * 100;
+
+            tdMonthAmount.textContent = (monthQty * rowData.price).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+            tdOriginQty.textContent = originQty.toLocaleString('es-ES', { maximumFractionDigits: 3 });
+            tdOriginPct.textContent = originPct.toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
+            tdPending.textContent = (rowData.budgetAmount - originAmount).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €';
+            tr.classList.toggle('cert-row-over', originQty > rowData.qty && rowData.qty > 0);
+            tr.classList.toggle('cert-row-done', rowData.qty > 0 && Math.abs(originQty - rowData.qty) < 0.0005);
+        };
+
+        input.addEventListener('input', () => {
+            const val = parseFloat(String(input.value).replace(',', '.'));
+            if (!certState.certs[rowData.code]) certState.certs[rowData.code] = {};
+            if (isNaN(val) || val <= 0) {
+                delete certState.certs[rowData.code][certCurrentMonth];
+                if (Object.keys(certState.certs[rowData.code]).length === 0) {
+                    delete certState.certs[rowData.code];
+                }
+            } else {
+                certState.certs[rowData.code][certCurrentMonth] = val;
+            }
+            certSave();
+            paintComputedCells();
+            updateCertSummary(buildCertRows());
+        });
+
+        paintComputedCells();
+        tdInput.appendChild(input);
+
+        [tdCode, tdSummary, tdUnit, tdQty, tdPrice, tdInput, tdMonthAmount, tdOriginQty, tdOriginPct, tdPending]
+            .forEach(td => tr.appendChild(td));
+        tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+}
+
+// ---- Exportar certificación a Excel ----
+function exportCertToExcel() {
+    if (typeof XLSX === 'undefined') { alert('Librería Excel no disponible.'); return; }
+    const rows = buildCertRows();
+    if (rows.length === 0) { alert('No hay partidas certificables.'); return; }
+
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+        ['Código', 'Partida', 'Ud', 'Cant. presup.', 'Precio (€)', 'Cant. período', 'Imp. período (€)', 'Cant. origen', '% origen', 'Imp. origen (€)', 'Imp. pendiente (€)']
+    ];
+
+    rows.forEach(r => {
+        wsData.push([
+            r.cleanCode, r.summary, r.unit,
+            r.qty, r.price, r.monthQty, r.monthAmount,
+            r.originQty, r.budgetAmount === 0 ? 0 : r.originPct / 100,
+            r.originAmount, r.pendingAmount
+        ]);
+    });
+
+    const totalMonth = rows.reduce((s, r) => s + r.monthAmount, 0);
+    const totalOrigin = rows.reduce((s, r) => s + r.originAmount, 0);
+    const totalBudget = rows.reduce((s, r) => s + r.budgetAmount, 0);
+    wsData.push([]);
+    wsData.push(['', 'TOTALES', '', '', '', '', totalMonth, '', totalBudget === 0 ? 0 : totalOrigin / totalBudget, totalOrigin, totalBudget - totalOrigin]);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    for (let r = 2; r <= wsData.length; r++) {
+        ['E', 'G', 'J', 'K'].forEach(col => { if (ws[`${col}${r}`]) ws[`${col}${r}`].z = '#,##0.00 €'; });
+        ['D', 'F', 'H'].forEach(col => { if (ws[`${col}${r}`]) ws[`${col}${r}`].z = '#,##0.000'; });
+        if (ws[`I${r}`]) ws[`I${r}`].z = '0.0%';
+    }
+    ws['!cols'] = [
+        { wch: 15 }, { wch: 50 }, { wch: 6 }, { wch: 13 }, { wch: 12 },
+        { wch: 13 }, { wch: 15 }, { wch: 12 }, { wch: 9 }, { wch: 15 }, { wch: 16 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, ('Certificación ' + certCurrentMonth).substring(0, 31));
+    const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+    XLSX.writeFile(wb, `${baseName}_certificacion_${certCurrentMonth}.xlsx`);
+    showNotification('Certificación exportada a Excel');
+}
+
+// ---- Exportar certificación a PDF ----
+function exportCertToPdf() {
+    const JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+    if (!JsPDF) { alert('Librería PDF no disponible.'); return; }
+
+    const rows = buildCertRows();
+    if (rows.length === 0) { alert('No hay partidas certificables.'); return; }
+
+    const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    if (typeof doc.autoTable !== 'function') { alert('La extensión de tablas para PDF (AutoTable) no está disponible.'); return; }
+
+    const projectTitle = (parsedData.properties && parsedData.properties.description) || currentFileName.replace(/\.[^/.]+$/, '');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(128, 0, 32);
+    doc.text('CERTIFICACIÓN DE OBRA — ' + certMonthLabel(certCurrentMonth), 15, 15);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text('Proyecto: ' + projectTitle, 15, 21);
+    doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES'), 15, 26);
+
+    const totalMonth = rows.reduce((s, r) => s + r.monthAmount, 0);
+    const totalOrigin = rows.reduce((s, r) => s + r.originAmount, 0);
+    const totalBudget = rows.reduce((s, r) => s + r.budgetAmount, 0);
+    const fmt = v => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+    const body = rows.map(r => [
+        r.cleanCode,
+        r.summary,
+        r.unit,
+        r.qty.toLocaleString('es-ES', { maximumFractionDigits: 3 }),
+        fmt(r.price),
+        r.monthQty.toLocaleString('es-ES', { maximumFractionDigits: 3 }),
+        fmt(r.monthAmount),
+        r.originQty.toLocaleString('es-ES', { maximumFractionDigits: 3 }),
+        (r.budgetAmount === 0 ? 0 : r.originPct).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %',
+        fmt(r.originAmount),
+        fmt(r.pendingAmount)
+    ]);
+
+    body.push([
+        '', 'TOTALES', '', '', '', '', fmt(totalMonth), '',
+        (totalBudget === 0 ? 0 : (totalOrigin / totalBudget) * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %',
+        fmt(totalOrigin), fmt(totalBudget - totalOrigin)
+    ]);
+
+    doc.autoTable({
+        startY: 31,
+        margin: { left: 15, right: 15, bottom: 18 },
+        styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: [220, 220, 220], lineWidth: 0.1, textColor: [40, 40, 40], font: 'helvetica' },
+        head: [['Código', 'Partida', 'Ud', 'Cant. presup.', 'Precio', 'Cant. período', 'Imp. período', 'Cant. origen', '% origen', 'Imp. origen', 'Imp. pendiente']],
+        headStyles: { fillColor: [128, 0, 32], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+        columnStyles: {
+            0: { cellWidth: 22 },
+            1: { cellWidth: 'auto' },
+            2: { cellWidth: 9, halign: 'center' },
+            3: { cellWidth: 18, halign: 'right' },
+            4: { cellWidth: 18, halign: 'right' },
+            5: { cellWidth: 18, halign: 'right' },
+            6: { cellWidth: 20, halign: 'right' },
+            7: { cellWidth: 18, halign: 'right' },
+            8: { cellWidth: 14, halign: 'right' },
+            9: { cellWidth: 20, halign: 'right' },
+            10: { cellWidth: 22, halign: 'right' }
+        },
+        body,
+        didParseCell: function (data) {
+            if (data.row.section === 'body' && data.row.index === body.length - 1) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fillColor = [240, 240, 240];
+            }
+        }
+    });
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(130, 130, 130);
+        doc.text('Generado por BC3 Viewer — ' + new Date().toLocaleDateString('es-ES'), 15, 203);
+        const pageStr = `Página ${i} de ${totalPages}`;
+        doc.text(pageStr, 282 - doc.getTextWidth(pageStr), 203);
+    }
+
+    const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+    doc.save(`${baseName}_certificacion_${certCurrentMonth}.pdf`);
+    showNotification('Certificación exportada a PDF');
+}
+
+// ---- Eventos del modal de certificaciones ----
+const certBtnEl = document.getElementById('certBtn');
+const certModalEl = document.getElementById('certModal');
+const closeCertBtnEl = document.getElementById('closeCertBtn');
+const certMonthInput = document.getElementById('certMonth');
+const exportCertExcelBtnEl = document.getElementById('exportCertExcelBtn');
+const exportCertPdfBtnEl = document.getElementById('exportCertPdfBtn');
+
+if (certBtnEl && certModalEl) {
+    certBtnEl.addEventListener('click', () => {
+        if (!parsedData) { alert('Carga primero un presupuesto BC3.'); return; }
+        certLoad();
+        if (certMonthInput) certMonthInput.value = certCurrentMonth;
+        openModal(certModalEl);
+        rebuildCertTable();
+    });
+}
+
+if (closeCertBtnEl && certModalEl) {
+    closeCertBtnEl.addEventListener('click', () => closeModal(certModalEl));
+}
+
+if (certModalEl) {
+    certModalEl.addEventListener('click', (e) => {
+        if (e.target === certModalEl) closeModal(certModalEl);
+    });
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && certModalEl && getComputedStyle(certModalEl).display !== 'none') {
+        closeModal(certModalEl);
+    }
+});
+
+if (certMonthInput) {
+    certMonthInput.addEventListener('change', () => {
+        if (!certMonthInput.value) return;
+        certCurrentMonth = certMonthInput.value;
+        rebuildCertTable();
+    });
+}
+
+if (exportCertExcelBtnEl) exportCertExcelBtnEl.addEventListener('click', exportCertToExcel);
+if (exportCertPdfBtnEl) exportCertPdfBtnEl.addEventListener('click', exportCertToPdf);

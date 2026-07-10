@@ -10,6 +10,29 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 
 ---
 
+## [0.4.0] — 2026-07-09
+
+Mejoras ejecutadas del análisis `mejoras-2026-07-09.md`: experiencia táctil y de teclado (1.2, 1.4, 1.5, 1.6, 1.7, 1.8) y nuevas funcionalidades de alta prioridad (2.1, 2.2, 2.3).
+
+### Añadido
+
+- Autoguardado y recuperación de sesión: cada edición del presupuesto se guarda automáticamente en `localStorage` (una clave por fichero, mismo patrón que el Gantt), con guardado final al abandonar la página. El estado inicial muestra una lista de "Sesiones guardadas" (hasta 5) con recuperación con un clic y borrado por sesión; deshacer/rehacer también persisten.
+- Edición estructural del presupuesto: menú contextual por fila del árbol (escritorio) para añadir capítulos y partidas, duplicar y eliminar elementos con confirmación; botones para añadir y eliminar líneas de medición en las tablas de mediciones (escritorio y móvil); factor/cantidad de la descomposición editable en línea y borrado de líneas de descomposición desde el panel de detalles. Los códigos nuevos se generan únicos a partir del padre y `generateModifiedBC3()` refleja la nueva estructura en el BC3 guardado (registros `~C`/`~T`/`~D`/`~M` nuevos, eliminados y descomposiciones vaciadas), con round-trip verificado.
+- Certificaciones y seguimiento de obra: nuevo modal "Certificación" con selector de mes, tabla de partidas certificables con cantidad del período editable, certificación a origen, % ejecutado e importe pendiente, tarjetas de resumen económico y resaltado de partidas completadas o sobrecertificadas. Las cantidades se registran por partida y por mes en `localStorage` y la certificación del período se exporta a PDF y Excel.
+- Botón de lápiz explícito (44 px) en el detalle móvil de una partida para editar resumen y precio sin depender del doble toque; la pulsación larga se mantiene como atajo.
+- Historial del navegador en la navegación móvil por niveles: el botón/gesto "atrás" (incluido el deslizamiento en iOS/Android) sube un nivel en lugar de abandonar la página.
+- Panel de detalles como panel lateral redimensionable en escritorio, con divisor arrastrable mediante Pointer Events (compatible con táctil y teclado), ancho persistido en `localStorage` y botón de cierre.
+- Navegación por teclado en el árbol (`role="treegrid"`): ↑/↓/Home/End para moverse, →/← para expandir/contraer o saltar a hijo/padre, `Enter` abre detalles, `/` enfoca el buscador y `Esc` devuelve el foco al árbol, con roving tabindex.
+
+### Cambiado
+
+- Todos los arrastres (columnas del árbol, barras del Gantt y columna de tareas del Gantt) migrados de eventos de ratón a Pointer Events con `touch-action: none`, haciendo el Planning usable en tablet y móvil.
+- La barra de filtros en móvil se compacta en una fila de chips más un botón "Filtros" con contador de filtros activos que abre una hoja inferior con los selects; en escritorio no hay cambios visuales.
+- Objetivos táctiles del árbol móvil garantizados a un mínimo de 44 px (filas y botón "← Volver").
+- Actualizada la versión mostrada a V0.4.0.
+
+---
+
 ## [0.3.0] — 2026-07-06
 
 ### Añadido
@@ -102,7 +125,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/) y el p
 - Eliminación del carácter `#` al final de códigos de concepto y partida.
 - Limpieza de símbolos `#` y espacios sobrantes en los campos de texto mostrados.
 
-[Unreleased]: https://github.com/rafarq/BC3php/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/rafarq/BC3php/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/rafarq/BC3php/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/rafarq/BC3php/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rafarq/BC3php/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/rafarq/BC3php/releases/tag/v0.1.0
